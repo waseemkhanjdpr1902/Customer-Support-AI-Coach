@@ -1,0 +1,335 @@
+{
+  "users": [
+    {
+      "id": "u-1",
+      "name": "Alice Vance",
+      "email": "alice@team.corp",
+      "role": "agent",
+      "avatarUrl": "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+    },
+    {
+      "id": "u-2",
+      "name": "Bob Carter",
+      "email": "bob@team.corp",
+      "role": "agent",
+      "avatarUrl": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
+    },
+    {
+      "id": "u-3",
+      "name": "Charlie Stone",
+      "email": "charlie@team.corp",
+      "role": "agent",
+      "avatarUrl": "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150"
+    },
+    {
+      "id": "u-4",
+      "name": "Sarah Jenkins",
+      "email": "sarah@team.corp",
+      "role": "manager",
+      "avatarUrl": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150"
+    },
+    {
+      "id": "u-5",
+      "name": "David Miller",
+      "email": "david@team.corp",
+      "role": "manager",
+      "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150"
+    },
+    {
+      "id": "u-jif6cjv1q",
+      "name": "Waseemkhan Jdpr",
+      "email": "waseemkhan_jdpr@hotmail.com",
+      "role": "agent",
+      "avatarUrl": "https://images.unsplash.com/photo-1500000045218?w=150",
+      "createdAt": "2026-06-19T07:36:06.993Z"
+    }
+  ],
+  "ai_history": [
+    {
+      "id": "h-1",
+      "userId": "u-1",
+      "userName": "Alice Vance",
+      "moduleId": "email_improvement",
+      "timestamp": "2026-06-17T19:29:13.601Z",
+      "tone": "Empathetic",
+      "inputData": {
+        "originalEmail": "I know you are mad but we can't refund your money because our policy says 14 days and you bought it 20 days ago. Sorry but rules are rules.",
+        "issueType": "Refund request outside of return window",
+        "tone": "Empathetic"
+      },
+      "outputData": {
+        "improvedEmail": "Thank you for shopping with us. I completely understand how frustrating it can be when a product doesn't meet your expectations, and I wish we could offer a different outcome. Regrettably, because the purchase was made 20 days ago, it falls outside our standard 14-day refund policy window. To help make things right, I would love to extend a 20% discount coupon for your next order or help you find an alternative product which better fits your needs. Please let me know how you would like to proceed.",
+        "explanationOfImprovements": "Replaced direct, abrupt rejection with supportive validation of the client's frustration. Highlighted the 14-day policy in a respectful tone, and actively offered supportive alternatives (discount coupon or alternative solution) to preserve the client relationship.",
+        "betterSubjectLine": "Regarding your recent purchase and return request"
+      }
+    },
+    {
+      "id": "h-2",
+      "userId": "u-2",
+      "userName": "Bob Carter",
+      "moduleId": "complaint_handling",
+      "timestamp": "2026-06-18T07:29:13.601Z",
+      "tone": "Apology",
+      "inputData": {
+        "complaint": "Your delivery driver literally threw the fragile package at my door, cracking the glass screen inside. This is completely unacceptable!",
+        "issueType": "Damaged delivery",
+        "resolution": "Ship immediate glass replacement and supply $15 feedback credit."
+      },
+      "outputData": {
+        "empatheticReply": "Dear Customer, I am incredibly sorry to hear about how your package was handled and the damage caused to your fragile glass screen. This is certainly not up to our standards, and I fully share your disappointment. I've already arranged to ship an immediate glass replacement today with priority shipping, and I've applied a $15 credit to your account as a gesture of our commitment. We are also reviewing this case directly with our shipping partner to ensure it never happens again.",
+        "apologyLine": "I express our sincere apologies for the careless handling of your delicate delivery.",
+        "resolutionWording": "We have prioritized a complimentary glass replacement shipping today and applied a $15 service voucher credit to your profile.",
+        "followUpLine": "I will personal monitor this delivery, and will send over your new tracking code as soon as it departs our warehouse."
+      }
+    },
+    {
+      "id": "h-3",
+      "userId": "u-1",
+      "userName": "Alice Vance",
+      "moduleId": "soft_skills",
+      "timestamp": "2026-06-19T03:29:13.601Z",
+      "tone": "Polite",
+      "inputData": {
+        "agentResponse": "Calm down, there is no need to write in all caps. Read the manual, the reset button is right on the back panel."
+      },
+      "outputData": {
+        "whatIsGood": "Identification of the correct technical troubleshooting step (locating the reset button on the back panel).",
+        "whatNeedsImprovement": "Tone is highly defensive and dismissive. Telling a customer to 'calm down' or calling out their formatting (all caps) escalates the tension. The instruction 'read the manual' is cold and feels lazy.",
+        "betterVersion": "I understand how frustrating it is when a device isn't working as expected. Let's get this resolved for you. On the very back panel of the device, you will find a small reset button. If you press and hold this button for 5 seconds, it should restore the standard settings. Let me know if you run into any trouble finding it!",
+        "softSkillTip": "Never tell a customer to calm down or instruct them what not to write; it invalidates their voice. Instead, join them on their team to solve the problem.",
+        "empathyScore": 2,
+        "professionalismScore": 3
+      }
+    }
+  ],
+  "manager_reviews": [
+    {
+      "id": "r-hhzmg0f3v",
+      "historyId": "h-1",
+      "reviewerId": "u-static",
+      "reviewerName": "Support Coach Guest",
+      "comment": "Excellent improvement, Alice! You framed the policy beautifully. High empathy and clear options. Keep up this magnificent standard of work.",
+      "status": "needs_work",
+      "improvementAreas": [
+        "Policy Framing",
+        "Value Alternatives",
+        "Active Listening",
+        "Tone Adjustment",
+        "Conflict De-escalation",
+        "Technical Phrasing",
+        "Clear Next Steps",
+        "Sincere Apologies",
+        "Concise Framing"
+      ],
+      "timestamp": "2026-06-19T07:58:06.968Z"
+    }
+  ],
+  "learning_resources": [
+    {
+      "id": "lr-1",
+      "category": "email_writing",
+      "title": "Stock Brokerage Phrasing & De-escalation Keys",
+      "content": "Learn how to transform potentially explosive brokerage customer service situations (including delayed withdrawals, margin warnings, automated trade risk closures, and order rejections) into highly professional, clear, and SEBI/regulatory aligned communications.",
+      "items": [
+        {
+          "original": "Your request is under process. Please wait.",
+          "better": "We understand the importance of your withdrawal request. Our team is actively processing it and we will keep you updated on the progress.",
+          "explanation": "Validates the payout request priority and sets expectations rather than simply ordering the customer to wait."
+        },
+        {
+          "original": "Margin is insufficient.",
+          "better": "We wish to inform you that the available margin in your account is currently insufficient. Kindly add funds to avoid any interruption in trading activities.",
+          "explanation": "States the standard margin maintenance constraint as a supportive system safeguard to avoid potential trading blocks."
+        },
+        {
+          "original": "Interest is applicable as per policy.",
+          "better": "As per the Margin Trading Facility guidelines, interest charges are applicable on utilized amounts. Please let us know if you would like assistance in understanding the calculation.",
+          "explanation": "Wraps Margin Trading Facility (MTF) guidelines in an active, supportive offer to explain calculation mathematics."
+        },
+        {
+          "original": "Position has been squared off.",
+          "better": "Due to margin requirements and risk management guidelines, the position was squared off automatically to safeguard the account from further exposure.",
+          "explanation": "Positions risk square-offs as standard system safety boundaries to limit losses rather than a hostile action."
+        },
+        {
+          "original": "Order rejected.",
+          "better": "The order could not be executed because of exchange or margin-related restrictions. Please review the order details and we will be happy to assist further.",
+          "explanation": "Offers helpful diagnostics instead of a blunt notification of failed placement."
+        },
+        {
+          "original": "System issue.",
+          "better": "We apologize for the inconvenience. Our technical team is investigating the issue and we are working towards a resolution at the earliest.",
+          "explanation": "Expresses corporate accountability and prioritizes rapid technical investigation."
+        },
+        {
+          "original": "Please wait.",
+          "better": "We appreciate your patience. Your account verification is currently under review and we shall notify you once the activation process is completed.",
+          "explanation": "Uses elite account-activation reassurance language in place of blunt commands."
+        },
+        {
+          "original": "Charges are applicable.",
+          "better": "DP charges are levied as per depository guidelines. We would be happy to explain the applicable charges in detail if required.",
+          "explanation": "Links Depository Participant (DP) expenses directly toCDSL/NSDL regulatory rules with clear documentation offers."
+        },
+        {
+          "original": "Charges are correct.",
+          "better": "We understand your concern regarding the brokerage charges. We are reviewing the transaction details and shall provide complete clarification shortly.",
+          "explanation": "Initiates active double-checks to secure investor confidence in billing transparency."
+        },
+        {
+          "original": "Request pending.",
+          "better": "Your pledge request has been successfully initiated and is currently being processed. We will notify you once the confirmation is received from the depository.",
+          "explanation": "Identifies key milestones and external depository confirmations to secure full customer visibility."
+        }
+      ]
+    },
+    {
+      "id": "lr-2",
+      "category": "complaint_handling",
+      "title": "Brokerage Compliance & Regulatory Guardrails",
+      "content": "Brokerage customer support agents operate under highly strict regulatory standards in volatile market settings. Ensure all written and verbal exchanges remain completely objective, transparent, and carry zero unapproved advisory liability.",
+      "checklist": [
+        "Strictly avoid offering speculative market forecasts, stock picks, or investment recommendations.",
+        "Secure account identity verification using clear validation questions before discussing margin levels or open positions.",
+        "Whenever explaining DP fees, AMC debits, or stamp duties, cite CDSL/NSDL and official exchange tariff rate sheets.",
+        "Frame margin square-offs (RMS) not as punitive actions, but as mechanical compliance boundaries to secure accounts.",
+        "Provide direct bank transaction reference details whenever answering delayed fund withdrawal tickets."
+      ]
+    },
+    {
+      "id": "lr-3",
+      "category": "phrase_bank",
+      "title": "Positive Stock Brokerage Phrase Library",
+      "content": "A comprehensive repository of 120+ micro-coached positive phrases covering all segments of standard brokerage customer support. Select and copy any optimized phrase into your active chat.",
+      "phrases": [
+        { "expression": "Thank you for your patience.", "context": "[Phrasing Replacement] Replaces 'Wait'", "category": "positive" },
+        { "expression": "Here are the available alternatives.", "context": "[Phrasing Replacement] Replaces 'Not possible'", "category": "positive" },
+        { "expression": "We understand your concern and are reviewing the matter.", "context": "[Phrasing Replacement] Replaces 'It is not our fault'", "category": "positive" },
+        { "expression": "Our technical team is working towards resolution.", "context": "[Phrasing Replacement] Replaces 'System issue'", "category": "positive" },
+        { "expression": "Charges are levied as per exchange and depository guidelines.", "context": "[Phrasing Replacement] Replaces 'Charges are applicable'", "category": "positive" },
+        { "expression": "Position was squared off as per risk management policy.", "context": "[Phrasing Replacement] Replaces 'Position closed'", "category": "positive" },
+        { "expression": "We are happy to assist in executing your trade. Please review your order parameters before confirming.", "context": "[Trading] Placing Orders", "category": "positive" },
+        { "expression": "The order is verified with the exchange and is currently pending fulfillment.", "context": "[Trading] Pending Order Status", "category": "positive" },
+        { "expression": "Let's review your order log to verify the exact price execution details.", "context": "[Trading] Trade Logs", "category": "positive" },
+        { "expression": "To modify your price trigger, you can update the open limit order directly from your order book.", "context": "[Trading] Limit Order Modification", "category": "positive" },
+        { "expression": "We are investigating the execution latency on this contract note with our clearing desk.", "context": "[Trading] Execution Tracking", "category": "positive" },
+        { "expression": "Would you like to review our brokerage slabs for equity delivery transactions?", "context": "[Trading] Tariff Inquiry", "category": "positive" },
+        { "expression": "Positions are monitored in real-time by our Risk Management Services to safeguard account equity.", "context": "[RMS] Portfolio Safeguards", "category": "positive" },
+        { "expression": "To avoid automated square-off, please maintain the exchange-mandated maintenance amount.", "context": "[RMS] Auto-Square off Avoidance", "category": "positive" },
+        { "expression": "We are happy to explain the risk parameters used for calculating your intraday multipliers.", "context": "[RMS] Intraday Leverage", "category": "positive" },
+        { "expression": "The auto-liquidation was activated in accordance with standard risk management parameters to limit exposure.", "context": "[RMS] Automatic Position Square-Off", "category": "positive" },
+        { "expression": "Risk rules are applied uniformly at market opening to secure client accounts.", "context": "[RMS] Risk Rules Enforcement", "category": "positive" },
+        { "expression": "We have initiated your Margin Trading Facility (MTF) request to expand your purchasing capacity.", "context": "[MTF] Facility Activation", "category": "positive" },
+        { "expression": "Interest is levied only on the utilized funding portion of your leveraged holding.", "context": "[MTF] Funding Cost Clarification", "category": "positive" },
+        { "expression": "Let's review the required collateral ratios for your chosen MTF eligible scrip.", "context": "[MTF] Collateral Ratios", "category": "positive" },
+        { "expression": "You can retain your leveraged position for up to 365 days, subject to maintaining collateral values.", "context": "[MTF] Leverage Holding Period", "category": "positive" },
+        { "expression": "To release your funded stocks from hold, kindly complete the OTP verification via depository mail.", "context": "[MTF] Share Release OTP", "category": "positive" },
+        { "expression": "The ledger shows a margin shortfall. Kindly deposit funds to restore full trading limits.", "context": "[Margin Shortfall] Ledger Alerts", "category": "positive" },
+        { "expression": "Depositing collateral shares is another secure way to cover your margin deficit.", "context": "[Margin Shortfall] Collateral Coverage", "category": "positive" },
+        { "expression": "We want to help check your required margin criteria so your trades go through smoothly.", "context": "[Margin Shortfall] Trade Simulation", "category": "positive" },
+        { "expression": "UPI or Netbanking deposits will reflect instantly, clearing any margin shortfall in real time.", "context": "[Margin Shortfall] Rapid Top-up", "category": "positive" },
+        { "expression": "Your current open exposures require a margin buffer of 20% to withstand market swings.", "context": "[Margin Shortfall] Exposure Buffers", "category": "positive" },
+        { "expression": "Payouts requested during stock market hours are processed within our standard 24-hour cycle.", "context": "[Fund Withdrawal] Withdrawal Timeline", "category": "positive" },
+        { "expression": "Your requested funds have successfully entered our bank processing queue.", "context": "[Fund Withdrawal] Processing Updates", "category": "positive" },
+        { "expression": "We recognize the priority of this payout and are coordinating with our banking partner for quick credit.", "context": "[Fund Withdrawal] Banking Delays", "category": "positive" },
+        { "expression": "Your cleared ledger balance is fully available for payout; let me guide you to initiate it.", "context": "[Fund Withdrawal] Cleared Balance Check", "category": "positive" },
+        { "expression": "To withdraw your funds, please verify that you have no open F&O intraday exposures today.", "context": "[Fund Withdrawal] Ledger Lock-outs", "category": "positive" },
+        { "expression": "Pledging your holding allows you to utilize margin benefits while retaining ownership.", "context": "[Pledge] Collateral Margin Benefit", "category": "positive" },
+        { "expression": "We have queued your scrip pledge request. A link is being triggered to your mobile from the depository.", "context": "[Pledge] Depository Authentication", "category": "positive" },
+        { "expression": "Your unpledge request is received; shares will return to your free demat pool tomorrow.", "context": "[Pledge] Unpledge Operations", "category": "positive" },
+        { "expression": "Standard haircuts are applied dynamically based on depository volatility guidelines.", "context": "[Pledge] Haircut Deductions", "category": "positive" },
+        { "expression": "Pledge collateral margin cannot be utilized for option buying as per regulatory mandates.", "context": "[Pledge] Usage Restrictions", "category": "positive" },
+        { "expression": "Depositor Participant (DP) fees are applied only when debiting shares from your Demat profile.", "context": "[DP Charges] Fee Explanations", "category": "positive" },
+        { "expression": "DP charges go directly to CDSL/NSDL depository operations for securing digital asset registers.", "context": "[DP Charges] Depository Distribution", "category": "positive" },
+        { "expression": "Demat debit fees are levied per transaction, regardless of the quantity of shares transferred.", "context": "[DP Charges] Transaction Tariffs", "category": "positive" },
+        { "expression": "We are happy to provide the official CDSL schedule confirming the standard statutory rates.", "context": "[DP Charges] Fee Audits", "category": "positive" },
+        { "expression": "Statutory billing entries can be tracked anytime on your monthly CDSL transaction invoices.", "context": "[DP Charges] Invoice Tracking", "category": "positive" },
+        { "expression": "We charge a flat discount fee of $20 per executed F&O trade, saving you significant transaction cost.", "context": "[Brokerage Queries] Flat Slabs", "category": "positive" },
+        { "expression": "Demat account delivery charges are absolutely zero under our basic starter fee tiers.", "context": "[Brokerage Queries] Delivery Discounts", "category": "positive" },
+        { "expression": "Let's review your trade ledger to confirm that the brokerage was calculated exactly per contract details.", "context": "[Brokerage Queries] Ledger Audits", "category": "positive" },
+        { "expression": "Brokerage fees can be fully customized if your overall monthly volume exceeds standard tiers.", "context": "[Brokerage Queries] Custom Brokerage", "category": "positive" },
+        { "expression": "You will receive a complete contract note detailing all brokerage fees by 7 PM today.", "context": "[Brokerage Queries] Contract Notes", "category": "positive" },
+        { "expression": "Mutual Funds purchases are registered directly with the Asset Management Company (AMC).", "context": "[Mutual Funds] AMC Subscriptions", "category": "positive" },
+        { "expression": "All mutual funds bought through our dashboard are direct plans with zero broker commissions.", "context": "[Mutual Funds] Direct Plan Perks", "category": "positive" },
+        { "expression": "Your MF purchase order has been placed successfully; NAV will be allotted on the next market day.", "context": "[Mutual Funds] NAV Booking", "category": "positive" },
+        { "expression": "Redemption payouts are credited directly to your bank account within T+2 working days.", "context": "[Mutual Funds] Redemption Cycles", "category": "positive" },
+        { "expression": "We would be glad to explain the difference between regular and direct schemes for your portfolio.", "context": "[Mutual Funds] Plan Comparison", "category": "positive" },
+        { "expression": "Setting up a Systematic Investment Plan (SIP) cultivates disciplined investing in chosen scrips.", "context": "[SIP] Wealth Accumulation", "category": "positive" },
+        { "expression": "To modify your monthly SIP date, simply update the tenure from our active SIP dashboards.", "context": "[SIP] Calendar Adjustments", "category": "positive" },
+        { "expression": "Signing a bank mandate ensures your SIP auto-debits function securely and seamlessly.", "context": "[SIP] Bank Auto-debit Mandates", "category": "positive" },
+        { "expression": "Your upcoming SIP installment has been registered with your bank for execution on the scheduled day.", "context": "[SIP] Upcoming Installment status", "category": "positive" },
+        { "expression": "SIP pauses can count for up to three months without any penalty or account constraints.", "context": "[SIP] Pause Operations", "category": "positive" },
+        { "expression": "Our engineering team has resolved the feed latency and all streaming quotes are fully synced.", "context": "[Technical Issues] Query Latencies", "category": "positive" },
+        { "expression": "If you encounter app latency, clearing the application cache will restore peak performance interface cycles.", "context": "[Technical Issues] Client-side Cache Clear", "category": "positive" },
+        { "expression": "Our backup server lines are online to guarantee zero order placement interruptions.", "context": "[Technical Issues] Gateway Failover", "category": "positive" },
+        { "expression": "We are implementing additional security checks to secure API token requests against latency.", "context": "[Technical Issues] API Token Requests", "category": "positive" },
+        { "expression": "Please rest assured that our server uptime logs show 100% security on your pending order books.", "context": "[Technical Issues] Queue Integrity Logs", "category": "positive" },
+        { "expression": "Welcome to our brokerage! We have received your preliminary sign-up details.", "context": "[Account Opening] Onboarding Greeting", "category": "positive" },
+        { "expression": "Your paperless online demat onboarding takes less than 10 minutes from start to finish.", "context": "[Account Opening] Velocity Onboarding", "category": "positive" },
+        { "expression": "Let's review the required account opening files so we can activate your trading powers today.", "context": "[Account Opening] Checklist verification", "category": "positive" },
+        { "expression": "Your demat number CDSL BOID is ready and is being emailed to you for instant portfolio transfers.", "context": "[Account Opening] Demat BOID setup", "category": "positive" },
+        { "expression": "You will receive your welcome package detail list once standard bank checks are completed.", "context": "[Account Opening] Welcome Onboarding Packs", "category": "positive" },
+        { "expression": "KYC registration is a one-time process which secures your trading rights across the country.", "context": "[KYC] Global Registry Sync", "category": "positive" },
+        { "expression": "Your KYC document checklist has been uploaded and submitted for depository central KYC checks.", "context": "[KYC] Document Upload status", "category": "positive" },
+        { "expression": "To update your mobile number, we suggest completing our digital IPV video verification.", "context": "[KYC] In-Person Verification", "category": "positive" },
+        { "expression": "Re-KYC is required only in case of change of residential address or identity guidelines.", "context": "[KYC] Re-registration requirements", "category": "positive" },
+        { "expression": "We are tracking your KRA verification profile directly to clear any onboarding blocks.", "context": "[KYC] KRA Verification tracking", "category": "positive" },
+        { "expression": "Adding a nominee to your demat portfolio secures the wealth of your loved ones.", "context": "[Nominee Update] Legacy Security", "category": "positive" },
+        { "expression": "You can add or update up to three nominees digitally using your e-Sign authentication.", "context": "[Nominee Update] Multinominee support", "category": "positive" },
+        { "expression": "Your nominee declaration is being reviewed by our depository and will update within 48 hours.", "context": "[Nominee Update] Depository verification", "category": "positive" },
+        { "expression": "No fussy paperwork is needed; our nominee interface connects directly with e-Sign APIs.", "context": "[Nominee Update] Paperless Nominations", "category": "positive" },
+        { "expression": "To verify if your nominee is registered, simply consult the profile settings in your backoffice.", "context": "[Nominee Update] Backoffice Checks", "category": "positive" },
+        { "expression": "The dividend payouts declared by the company will credit directly to your primary bank account.", "context": "[Corporate Actions] Dividend Distributions", "category": "positive" },
+        { "expression": "Due to a stock split of 1:10, your demat share balance will update automatically next week.", "context": "[Corporate Actions] Splits and Mergers", "category": "positive" },
+        { "expression": "We are happy to guide you on how to apply for the upcoming buyback of shares digitally.", "context": "[Corporate Actions] Buyback campaigns", "category": "positive" },
+        { "expression": "Bonus shares have been credited from CDSL depository and will appear in your holdings within 3 days.", "context": "[Corporate Actions] Bonus Allotment", "category": "positive" },
+        { "expression": "Let's check the ex-date of this corporate merger to locate your entitlement ratios.", "context": "[Corporate Actions] Entitlement ex-dates", "category": "positive" },
+        { "expression": "Applying for IPOs is easy using UPI; we have prepared a video walk-through for you.", "context": "[IPO] UPI Mandates", "category": "positive" },
+        { "expression": "Your IPO application was received and the bank block mandate is successfully registered.", "context": "[IPO] Bid Registration status", "category": "positive" },
+        { "expression": "Allotment status is decided under fair registrar draw guidelines; we hope you secure it!", "context": "[IPO] Allotment Raffles", "category": "positive" },
+        { "expression": "If the bid isn't allotted, the locked capital will be auto-released by your sponsor bank tomorrow.", "context": "[IPO] Bank Release codes", "category": "positive" },
+        { "expression": "IPO bidding closes at 5 PM on the final day; please submit bids before the clearing block.", "context": "[IPO] Bidding hours", "category": "positive" },
+        { "expression": "Our dedicated 'Call & Trade' desk is available at market hours to execute your trades.", "context": "[Call & Trade] Help Desk", "category": "positive" },
+        { "expression": "Standard 'Call & Trade' rates are applied per trade, which keeps you covered during internet issues.", "context": "[Call & Trade] Connectivity backups", "category": "positive" },
+        { "expression": "To place a call trade, let me check your registered 4-digit voice passcode for security.", "context": "[Call & Trade] Voice Auth Checks", "category": "positive" },
+        { "expression": "All call and trade orders are voice recorded to fulfill compliance and quality standards.", "context": "[Call & Trade] Security Auditing", "category": "positive" },
+        { "expression": "Our tele-dealers are verified by regulators to ensure accurate, quick order placement.", "context": "[Call & Trade] Dealer Certifications", "category": "positive" },
+        { "expression": "Demat Account Maintenance Charges (AMC) are collected quarterly to cover registry security.", "context": "[AMC Charges] Quarterly Tariff", "category": "positive" },
+        { "expression": "AMC fees are completely waived for basic service accounts with portfolios under $5k.", "context": "[AMC Charges] Waiver criteria", "category": "positive" },
+        { "expression": "Let's review your AMC invoice to explain the specific quarterly service breakdowns.", "context": "[AMC Charges] Invoice review", "category": "positive" },
+        { "expression": "Our yearly prepay plans offer up to 30% savings on regular AMC Demat charges.", "context": "[AMC Charges] Saver plans", "category": "positive" },
+        { "expression": "The account maintenance fee helps CDSL/NSDL security layers keep your portfolio assets safe.", "context": "[AMC Charges] Infrastructure security", "category": "positive" },
+        { "expression": "Activating additional segments like F&O expands your reach to derivative instruments.", "context": "[Segment Activation] Derivative leverage", "category": "positive" },
+        { "expression": "To activate the commodity section, please submit your latest 6-month bank statement profile.", "context": "[Segment Activation] Proof checklist", "category": "positive" },
+        { "expression": "Your segment activation is processed and F&O trading is fully available on your profile.", "context": "[Segment Activation] Activation success status", "category": "positive" },
+        { "expression": "No separate Demat account is needed; segment updates are mapped to your existing CDC ID.", "context": "[Segment Activation] Integrated mappings", "category": "positive" },
+        { "expression": "Segment upgrades take less than 24 hours to replicate with the exchange clearing house.", "context": "[Segment Activation] Exchange syncing", "category": "positive" },
+        { "expression": "Trading commodities like gold and crude oil provides dynamic hedges to equity portfolios.", "context": "[Commodity & Currency] Hedging benefits", "category": "positive" },
+        { "expression": "Currency segment operating hours extend up to 5 PM, giving you extra trading flexibility.", "context": "[Commodity & Currency] Segment schedules", "category": "positive" },
+        { "expression": "Commodity options settle into physical contracts upon maturity as per regulatory guidelines.", "context": "[Commodity & Currency] Physical settlements", "category": "positive" },
+        { "expression": "We offer seamless margin cash conversions so you can swap trading focus instantly.", "context": "[Commodity & Currency] Cash conversions", "category": "positive" },
+        { "expression": "Currency futures execution requires maintaining low margins compared to high-beta stocks.", "context": "[Commodity & Currency] Future hedges", "category": "positive" },
+        { "expression": "Derivative trading allows you to capitalize on both rising and falling market vectors.", "context": "[F&O] Future contracts", "category": "positive" },
+        { "expression": "Option buy orders require premium balances only, with zero risk of margin shortfalls.", "context": "[F&O] Premium check logs", "category": "positive" },
+        { "expression": "To write options, our platform supports multi-leg hedging to reduce your margin footprint.", "context": "[F&O] Option Hedging strategies", "category": "positive" },
+        { "expression": "Weekly F&O expiries settle on Thursdays; please monitor your near-month contract books.", "context": "[F&O] Settlement Calendar", "category": "positive" },
+        { "expression": "Let's review our Option Chain details so you locate the correct strike prices.", "context": "[F&O] Interactive Option chain", "category": "positive" },
+        { "expression": "The SLBM segment lets you earn passive yield by lending your idle demat stocks to banks.", "context": "[SLBM] Lending yield", "category": "positive" },
+        { "expression": "Lending shares does not affect your corporate action benefits like dividend credits.", "context": "[SLBM] Corporate rights retention", "category": "positive" },
+        { "expression": "We would be glad to show you current market borrow demand rates for SLBM scrips.", "context": "[SLBM] Lending yields lists", "category": "positive" },
+        { "expression": "Standard SLBM contract settlement occurs on a monthly basis with guaranteed depository security.", "context": "[SLBM] CDSL Clearing protections", "category": "positive" },
+        { "expression": "To register for stock lending, simply file your depository SLBM activation forms digitally.", "context": "[SLBM] Operations setup", "category": "positive" },
+        { "expression": "CDSL secures your equity asset tokens digitally under strict depository licenses.", "context": "[Depository Operations] CDSL Trust security", "category": "positive" },
+        { "expression": "Transferring shares via DIS booklets can be fully processed online using our CDSL Easiest login.", "context": "[Depository Operations] Demat transfers", "category": "positive" },
+        { "expression": "Your demat holdings statement is directly downloadable from depository servers anytime.", "context": "[Depository Operations] CDSL Sync confirmations", "category": "positive" },
+        { "expression": "To unlock locked shares, please verify your depository security authentication PIN.", "context": "[Depository Operations] TPIN verification", "category": "positive" },
+        { "expression": "We act as your Depository Participant, providing direct pipelines to secure depository accounts.", "context": "[Depository Operations] DP pipeline benefits", "category": "positive" },
+        { "expression": "We understand your frustration and are prioritizing this inquiry with our compliance department.", "context": "[Complaints & Escalations] Level 2 priorities", "category": "positive" },
+        { "expression": "If standard channels do not satisfy you, our Compliance Officer details are publicly available.", "context": "[Complaints & Escalations] Escalation contacts", "category": "positive" },
+        { "expression": "We are conducting a root cause investigation on this trade log and will clarify details shortly.", "context": "[Complaints & Escalations] Trade investigations", "category": "positive" },
+        { "expression": "Our main priority is to resolve this dispute to your absolute satisfaction. Thank you for patience.", "context": "[Complaints & Escalations] Dedicated solutions", "category": "positive" },
+        { "expression": "Your dispute is logged and we are processing immediate compensation reviews if system lag is found.", "context": "[Complaints & Escalations] Redressal desks", "category": "positive" }
+      ]
+    }
+  ]
+}

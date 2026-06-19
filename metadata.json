@@ -1,0 +1,6 @@
+{
+  "name": "Customer Support AI Coach",
+  "description": "An internal coaching and training platform for support agents to improve support email quality, handle difficult customer complaints, write call scripts, build soft skills, and escalate cases, featuring manager review feedback portals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
