@@ -5,6 +5,7 @@ import {
   Smile, Award, FileText, ChevronRight, UserCog
 } from 'lucide-react';
 import { ModuleId, User } from '../types';
+import { apiClient } from '../apiClient';
 
 interface CoachModuleProps {
   moduleId: ModuleId;
@@ -131,41 +132,22 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     setIsSaved(false);
   };
 
-  // Call Express API endpoint to generate results using true server-side Gemini
+  // Call Express API endpoint or run local fallback simulation
   const generateOutput = async () => {
     setLoading(true);
     setIsSaved(false);
     setOutput(null);
 
     try {
-      // Package only inputs relevant to current module
-      const response = await fetch('/api/coach/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          moduleId,
-          inputs,
-          tone
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok) {
+      const data = await apiClient.generateCoachOutput(moduleId, inputs, tone);
+      if (data) {
         setOutput(data);
       } else {
-        console.error('API Error:', data);
-        // Use direct fallback from payload response if available, or error status
-        if (data.fallback) {
-          setOutput(data.fallback);
-        } else {
-          alert('Could not coordinate response with Coaching Engine. Please try again.');
-        }
+        alert('Could not coordinate response with Coaching Engine. Please try again.');
       }
     } catch (err) {
-      console.error('Network Error:', err);
-      alert('Network failure connecting to AI Coaching server.');
+      console.error('Generation Error:', err);
+      alert('Coaching engine coordinating timeout.');
     } finally {
       setLoading(false);
     }
@@ -177,23 +159,11 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     setRewritingField(fieldKey);
 
     try {
-      const response = await fetch('/api/coach/rewrite', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          originalText: output[fieldKey],
-          command,
-          tone
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok && data.rewrittenText) {
+      const rewrittenText = await apiClient.rewriteCoachText(output[fieldKey], command, tone);
+      if (rewrittenText) {
         setOutput(prev => prev ? ({
           ...prev,
-          [fieldKey]: data.rewrittenText
+          [fieldKey]: rewrittenText
         }) : null);
       }
     } catch (err) {
@@ -203,28 +173,22 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     }
   };
 
-  // Save outputs to history table so Managers can review them
+  // Save outputs to history (supports local offline database on static hosts like Vercel)
   const saveToHistory = async () => {
     if (!output) return;
     setSaveStatus('saving');
 
     try {
-      const response = await fetch('/api/history', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId: currentUser.id,
-          userName: currentUser.name,
-          moduleId,
-          tone,
-          inputData: inputs,
-          outputData: output
-        })
-      });
+      const success = await apiClient.saveHistoryItem(
+        currentUser.id,
+        currentUser.name,
+        moduleId,
+        tone,
+        inputs,
+        output
+      );
 
-      if (response.ok) {
+      if (success) {
         setIsSaved(true);
         setSaveStatus('success');
         if (onSaveSuccess) onSaveSuccess();

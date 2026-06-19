@@ -5,6 +5,8 @@ import {
   ArrowRight, Heart, Info, LayoutGrid, Clock, UsersRound
 } from 'lucide-react';
 import { User, HistoryItem, LearningResource, ModuleId } from './types';
+import { STATIC_LEARNING_RESOURCES, STATIC_STATS, STATIC_HISTORY } from './fallbackData';
+import { apiClient } from './apiClient';
 import DashboardView from './components/DashboardView';
 import CoachModule from './components/CoachModule';
 import HistoryList from './components/HistoryList';
@@ -24,26 +26,17 @@ const GUEST_USER: User = {
 export default function App() {
   const [currentUser] = useState<User>(GUEST_USER);
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [learningResources, setLearningResources] = useState<LearningResource[]>([]);
-  const [stats, setStats] = useState({
-    totalGenerations: 0,
-    reviewedCount: 0,
-    pendingReview: 0,
-    avgEmpathy: 0.0,
-    avgProfessionalism: 0.0
-  });
+  const [history, setHistory] = useState<HistoryItem[]>(STATIC_HISTORY);
+  const [learningResources, setLearningResources] = useState<LearningResource[]>(STATIC_LEARNING_RESOURCES);
+  const [stats, setStats] = useState(STATIC_STATS);
 
   const [loading, setLoading] = useState(false);
 
-  // Sync data from Express server
+  // Sync data from Express server (with resilient client fallbacks)
   const loadStats = async () => {
     try {
-      const res = await fetch('/api/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      const data = await apiClient.getStats();
+      setStats(data);
     } catch (err) {
       console.error("Error loading stats:", err);
     }
@@ -51,12 +44,8 @@ export default function App() {
 
   const loadHistory = async (userObj: User) => {
     try {
-      const url = `/api/history?userId=${userObj.id}&role=${userObj.role}`;
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data);
-      }
+      const data = await apiClient.getHistory(userObj.id, userObj.role);
+      setHistory(data);
     } catch (err) {
       console.error("Error loading history:", err);
     }
@@ -64,11 +53,8 @@ export default function App() {
 
   const loadLearning = async () => {
     try {
-      const res = await fetch('/api/learning');
-      if (res.ok) {
-        const data = await res.json();
-        setLearningResources(data);
-      }
+      const data = await apiClient.getLearningResources();
+      setLearningResources(data);
     } catch (err) {
       console.error("Error loading learning resources:", err);
     }

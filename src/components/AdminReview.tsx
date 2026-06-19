@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { HistoryItem, ModuleId } from '../types';
 import { getModuleTitle } from './CoachModule';
+import { apiClient } from '../apiClient';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface AdminReviewProps {
@@ -46,11 +47,8 @@ export default function AdminReview({ history, currentUser, onReviewSubmitted }:
   const loadStats = async () => {
     setStatsLoading(true);
     try {
-      const res = await fetch('/api/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
+      const data = await apiClient.getStats();
+      setStats(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -75,22 +73,16 @@ export default function AdminReview({ history, currentUser, onReviewSubmitted }:
     if (!selectedHistoryId || !comment.trim()) return;
 
     try {
-      const response = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          historyId: selectedHistoryId,
-          reviewerId: currentUser.id,
-          reviewerName: currentUser.name,
-          comment,
-          status,
-          improvementAreas: selectedAreas
-        })
-      });
+      const success = await apiClient.submitReview(
+        selectedHistoryId,
+        currentUser.id,
+        currentUser.name,
+        comment,
+        status,
+        selectedAreas
+      );
 
-      if (response.ok) {
+      if (success) {
         setComment('');
         setSelectedAreas([]);
         setSelectedHistoryId(null);
