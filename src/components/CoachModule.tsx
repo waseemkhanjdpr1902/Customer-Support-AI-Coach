@@ -25,6 +25,7 @@ const TONES = [
 export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: CoachModuleProps) {
   // Inputs
   const [tone, setTone] = useState('Professional');
+  const [language, setLanguage] = useState('en');
   
   // Dynamic inputs state based on module
   const [inputs, setInputs] = useState<Record<string, string>>({
@@ -47,7 +48,9 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     // Email Writer
     purpose: '',
     recipientType: '',
-    keyPoints: ''
+    keyPoints: '',
+    // Universal Coaching Tool (English/Hindi)
+    textToAnalyze: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -57,6 +60,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
   const [customRewriteCommand, setCustomRewriteCommand] = useState('');
   const [rewritingField, setRewritingField] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [selectedVariation, setSelectedVariation] = useState<string>('professional');
 
   const handleInputChange = (field: string, val: string) => {
     setInputs(prev => ({ ...prev, [field]: val }));
@@ -118,6 +122,12 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
         keyPoints: "Welcome package attached; Scheduling link included; Need safe workspace IP whitelist ranges."
       }));
       setTone('Professional');
+    } else if (moduleId === 'universal_coach') {
+      setInputs(prev => ({
+        ...prev,
+        textToAnalyze: "I want to complain about a refund delay for my stocks payout. You guys are useless."
+      }));
+      setTone('Professional');
     }
   };
 
@@ -126,7 +136,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
       originalEmail: '', issueType: '', complaint: '', resolution: '',
       callReason: '', customerType: 'standard', issueSummary: '',
       agentResponse: '', delayReason: '', currentStatus: '', nextAction: '',
-      purpose: '', recipientType: '', keyPoints: ''
+      purpose: '', recipientType: '', keyPoints: '', textToAnalyze: ''
     });
     setOutput(null);
     setIsSaved(false);
@@ -139,7 +149,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     setOutput(null);
 
     try {
-      const data = await apiClient.generateCoachOutput(moduleId, inputs, tone);
+      const data = await apiClient.generateCoachOutput(moduleId, inputs, tone, language);
       if (data) {
         setOutput(data);
       } else {
@@ -159,7 +169,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     setRewritingField(fieldKey);
 
     try {
-      const rewrittenText = await apiClient.rewriteCoachText(output[fieldKey], command, tone);
+      const rewrittenText = await apiClient.rewriteCoachText(output[fieldKey], command, tone, language);
       if (rewrittenText) {
         setOutput(prev => prev ? ({
           ...prev,
@@ -458,10 +468,30 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
             </div>
           )}
 
+          {moduleId === 'universal_coach' && (
+            <div className="space-y-3.5 text-left">
+              <div className="p-2 bg-amber-50/55 text-amber-805 rounded-sm text-[11px] flex gap-2 border border-amber-100">
+                <Sparkles className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+                <p className="text-amber-850">Paste any customer complaint, financial service query, or draft written by an agent. The coach will auto-detect the input type, check financial compliance, score key soft skills, and generate 6 varied response options in the language selected below.</p>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Paste Raw Customer Text or Agent Draft</label>
+                <textarea 
+                  id="inp-universal-text"
+                  rows={8}
+                  placeholder="e.g., I want to complain about a refund delay for my stocks payout. You guys are useless or Dear client we can't refund your brokerage charges..."
+                  value={inputs.textToAnalyze}
+                  onChange={(e) => handleInputChange('textToAnalyze', e.target.value)}
+                  className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition resize-none leading-relaxed font-mono"
+                />
+              </div>
+            </div>
+          )}
+
           {/* Tone Selector & Form Actions */}
           <div className="border-t border-slate-150 pt-3.5 space-y-4 text-left">
             <div>
-              <label className="block text-[11px] font-bold text-slate-505 mb-1.5 uppercase tracking-wider">Coaching Tone Target</label>
+              <label className="block text-[11px] font-bold text-slate-550 mb-1.5 uppercase tracking-wider">Coaching Tone Target</label>
               <div className="grid grid-cols-3 gap-1.5">
                 {TONES.map(t => (
                   <button
@@ -716,6 +746,230 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
                     {renderOutputBlock("whatsAppUpdate", "WhatsApp / SMS Instant Notification Update", output.whatsAppUpdate)}
                   </div>
                 )}
+
+                {/* 7. Universal AI Coach Output Fields */}
+                {moduleId === 'universal_coach' && (
+                  <div className="space-y-4 max-h-[580px] overflow-y-auto pr-1">
+                    {/* Input Summary and Sentiment Indicator Badges */}
+                    <div className="flex flex-wrap gap-2 pb-2.5 border-b border-slate-100 items-center">
+                      <div className="px-2 py-1 rounded bg-slate-100 border border-slate-200 text-slate-705 text-[11px] font-semibold flex items-center gap-1">
+                        <span className="text-[10px] text-slate-400">Class:</span>
+                        <strong className="text-slate-900">{output.inputType || "Customer Query"}</strong>
+                      </div>
+                      
+                      <div className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 border ${
+                        output.customerSentiment?.toLowerCase().includes('angry') || output.customerSentiment?.toLowerCase().includes('gussa')
+                          ? 'bg-rose-50 border-rose-200 text-rose-700 font-bold'
+                          : 'bg-amber-50 border-amber-200 text-amber-700'
+                      }`}>
+                        <span className="text-[10px] opacity-70">Sentiment:</span>
+                        <strong>{output.customerSentiment || "Frustrated"}</strong>
+                      </div>
+
+                      <div className={`px-2 py-1 rounded text-[11px] font-semibold flex items-center gap-1 border ${
+                        output.priority?.toLowerCase() === 'high' || output.priority?.toLowerCase() === 'critical'
+                          ? 'bg-red-50 border-red-200 text-red-700 font-bold'
+                          : output.priority?.toLowerCase() === 'medium'
+                          ? 'bg-amber-50 border-amber-200 text-amber-700'
+                          : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                      }`}>
+                        <span className="text-[10px] opacity-70">Priority:</span>
+                        <strong>{output.priority || "Medium"}</strong>
+                      </div>
+                      
+                      <div className="px-2 py-1 rounded bg-blue-50 border border-blue-100 text-blue-700 text-[11px] font-semibold flex items-center gap-1 ml-auto">
+                        <span className="text-[10px] text-blue-400">Compliance:</span>
+                        <strong className="text-blue-900">SEBI Verified</strong>
+                      </div>
+                    </div>
+
+                    {/* Email Quality Scores & Analysis Rubric (Rendered only if input is agent draft or scores present) */}
+                    {output.emailAnalysis && (
+                      <div className="bg-slate-50 border border-slate-200 p-3 rounded-sm space-y-3 font-sans">
+                        <h5 className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest flex items-center gap-1 block text-left">
+                          <Smile className="w-3.5 h-3.5 text-blue-500" />
+                          Email Quality Scorecard & Suggestions
+                        </h5>
+
+                        {/* Scores grid */}
+                        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+                          {[
+                            { label: 'Overall', val: output.emailAnalysis.overallScore },
+                            { label: 'Empathy', val: output.emailAnalysis.empathyScore },
+                            { label: 'Professional', val: output.emailAnalysis.professionalismScore },
+                            { label: 'Clarity', val: output.emailAnalysis.clarityScore },
+                            { label: 'Ownership', val: output.emailAnalysis.ownershipScore },
+                            { label: 'Grammar', val: output.emailAnalysis.grammarScore }
+                          ].map(scoreItem => (
+                            <div key={scoreItem.label} className="bg-white p-1.5 rounded border border-slate-150 text-center">
+                              <span className="text-[9px] font-bold text-slate-400 block truncate">{scoreItem.label}</span>
+                              <span className={`text-base font-extrabold ${getScoreColor(scoreItem.val ? (scoreItem.val > 10 ? Math.round(scoreItem.val / 10) : scoreItem.val) : 8)}`}>
+                                {scoreItem.val || 80}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Text Analysis */}
+                        <div className="text-xs space-y-2 pt-1 border-t border-slate-100 text-left">
+                          {output.emailAnalysis.strengths && (
+                            <p className="text-slate-600 block">
+                              <strong className="text-emerald-700 font-bold block mb-0.5">✓ Performance Strengths:</strong>
+                              {output.emailAnalysis.strengths}
+                            </p>
+                          )}
+                          {output.emailAnalysis.areasToImprove && (
+                            <p className="text-slate-600 block">
+                              <strong className="text-rose-700 font-bold block mb-0.5">✗ Code friction / Areas to Improve:</strong>
+                              {output.emailAnalysis.areasToImprove}
+                            </p>
+                          )}
+                          {output.emailAnalysis.suggestedBetterPhrases && (
+                            <p className="p-2 bg-blue-50/50 rounded border border-blue-100 text-[11px] text-blue-800 italic block">
+                              <strong className="text-blue-900 not-italic font-bold block mb-0.5">⭐ Proactive Phrasing Upgrade:</strong>
+                              {output.emailAnalysis.suggestedBetterPhrases}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Response Variations Tab Container */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] font-extrabold text-slate-500 uppercase tracking-widest block text-left">
+                        Six Tone response variations (Hindi/English compatible)
+                      </span>
+                      
+                      {/* Tabs Header */}
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-1 border-b border-slate-200 pb-1.5">
+                        {['professional', 'empathetic', 'polite', 'firm', 'apology', 'escalation'].map(v => (
+                          <button
+                            key={v}
+                            onClick={() => setSelectedVariation(v)}
+                            className={`px-1.5 py-1 text-[10px] font-bold rounded-sm border uppercase tracking-wider text-center transition cursor-pointer ${
+                              selectedVariation === v
+                                ? 'bg-slate-900 border-slate-900 text-white font-extrabold shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Tab Content */}
+                      {output.variations && output.variations[selectedVariation] && (
+                        <div className="bg-white border border-slate-200 rounded p-3.5 space-y-2.5 shadow-xs transition duration-150 text-left">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] gap-2 pb-2 border-b border-slate-100">
+                            <span className="text-slate-550">
+                              Best Use Case: <strong className="text-slate-800 font-bold">{output.variations[selectedVariation].bestUseCase}</strong>
+                            </span>
+                            <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-sm font-mono text-[9px] uppercase font-bold text-center self-start sm:self-auto shrink-0">
+                              Tone: {output.variations[selectedVariation].tone}
+                            </span>
+                          </div>
+                          
+                          {renderOutputBlock(
+                            `var-${selectedVariation}`, 
+                            `${selectedVariation} formulation update`, 
+                            output.variations[selectedVariation].response, 
+                            true
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Angry Client De-escalation Protocol */}
+                    {output.angrySentimentHandling && (
+                      <div className="bg-rose-50 border border-rose-200 p-3.5 rounded-sm space-y-2.5 text-left">
+                        <div className="flex items-center gap-1.5 border-b border-rose-250 pb-1.5 flex-wrap">
+                          <BadgeAlert className="w-4 h-4 text-rose-600 shrink-0" />
+                          <h5 className="text-[10px] font-extrabold text-rose-800 uppercase tracking-widest">
+                            😡 Escalated Client De-escalation Protocol
+                          </h5>
+                          <span className="ml-auto px-2 py-0.5 bg-rose-600 text-white text-[9px] font-mono rounded-sm font-bold uppercase tracking-wider animate-pulse">
+                            Risk Level: {output.angrySentimentHandling.riskLevel || "High"}
+                          </span>
+                        </div>
+
+                        <div className="text-xs space-y-2 text-rose-900 leading-relaxed font-sans block">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] pb-2 border-b border-rose-100">
+                            <div>
+                              <span className="text-[9px] uppercase tracking-wider block text-rose-600 font-bold">Client Emotion Matrix</span>
+                              <span className="font-bold text-rose-950">{output.angrySentimentHandling.customerEmotion}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] uppercase tracking-wider block text-rose-600 font-bold">Action Urgency</span>
+                              <span className="font-bold text-rose-950">{output.angrySentimentHandling.urgencyLevel}</span>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3 pt-1">
+                            <div>
+                              <strong className="text-rose-950 font-bold block text-[10px] uppercase font-mono">1. De-escalating Greeting (Warmly validate emotions):</strong>
+                              <p className="bg-white p-2 border border-rose-100 rounded text-[11px] text-slate-800 mt-0.5 shadow-tiny">
+                                "{output.angrySentimentHandling.deEscalationResponse}"
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <strong className="text-rose-950 font-bold block text-[10px] uppercase font-mono">2. Immediate Redress Action (Remove statutory locks):</strong>
+                              <p className="bg-white p-2 border border-rose-100 rounded text-[11px] text-slate-800 mt-0.5 shadow-tiny">
+                                "{output.angrySentimentHandling.immediateActionStatement}"
+                              </p>
+                            </div>
+
+                            <div>
+                              <strong className="text-rose-950 font-bold block text-[10px] uppercase font-mono">3. Taking Express Ownership (Personal accountability):</strong>
+                              <p className="bg-white p-2 border border-rose-100 rounded text-[11px] text-slate-800 mt-0.5 shadow-tiny">
+                                "{output.angrySentimentHandling.ownershipStatement}"
+                              </p>
+                            </div>
+
+                            <div>
+                              <strong className="text-rose-950 font-bold block text-[10px] uppercase font-mono">4. Concrete Next Step (Give solid ETA):</strong>
+                              <p className="bg-white p-2 border border-rose-100 rounded text-[11px] text-slate-800 mt-0.5 shadow-tiny">
+                                "{output.angrySentimentHandling.nextStepStatement}"
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Standard Coaching Tips */}
+                    {output.coachingTips && (
+                      <div className="bg-blue-50/70 border border-blue-150 p-3.5 rounded-sm space-y-2.5 text-left font-sans">
+                        <h5 className="text-[10px] font-extrabold text-blue-800 uppercase tracking-widest flex items-center gap-1 border-b border-blue-200 pb-1.5 block">
+                          <UserCog className="w-4 h-4 text-blue-600 shrink-0" />
+                          Compliance, Soft Skills & Coaching Insights
+                        </h5>
+                        
+                        <div className="text-xs space-y-3.5 text-slate-700 leading-relaxed block">
+                          <div>
+                            <strong className="text-blue-900 block font-bold text-[11px]">✍️ Communication Structure Improvement:</strong>
+                            <p className="mt-0.5 text-slate-700">{output.coachingTips.communicationImprovement}</p>
+                          </div>
+                          <div>
+                            <strong className="text-blue-900 block font-bold text-[11px]">🧠 Soft Skills & Empathy Refinement:</strong>
+                            <p className="mt-0.5 text-slate-700">{output.coachingTips.softSkillsImprovement}</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                            <div className="bg-white p-2.5 rounded border border-blue-100 shadow-tiny">
+                              <strong className="text-emerald-800 block text-[10px] uppercase font-extrabold mb-0.5">✓ How an Administrator Handles this:</strong>
+                              <p className="text-[11px] text-slate-650 italic mt-0.5 leading-relaxed font-sans">"{output.coachingTips.whatSeniorManagerWrites}"</p>
+                            </div>
+                            <div className="bg-white p-2.5 rounded border border-rose-200 shadow-tiny">
+                              <strong className="text-rose-800 block text-[10px] uppercase font-extrabold mb-0.5 font-bold">✗ PHRASES TO STATEDLY AVOID:</strong>
+                              <p className="text-[11px] text-rose-955 mt-0.5 leading-relaxed font-sans font-medium">"{output.coachingTips.whatNotToWrite}"</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -728,11 +982,31 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
   function renderOutputBlock(
     key: string, 
     label: string, 
-    value: string, 
+    value: any, 
     showRewriteControls = false, 
     scriptBlockStyle = false
   ) {
     if (!value) return null;
+
+    let displayValue = "";
+    if (typeof value === 'object' && value !== null) {
+      try {
+        displayValue = Object.entries(value)
+          .map(([k, v]) => {
+            const formattedKey = k
+              .replace(/([A-Z])/g, ' $1')
+              .replace(/^./, str => str.toUpperCase());
+            const valStr = typeof v === 'object' ? JSON.stringify(v) : String(v);
+            return `${formattedKey}: ${valStr}`;
+          })
+          .join('\n\n');
+      } catch (e) {
+        displayValue = JSON.stringify(value, null, 2);
+      }
+    } else {
+      displayValue = String(value);
+    }
+
     return (
       <div className={`rounded-sm border border-slate-205 p-3 text-left transition ${scriptBlockStyle ? 'bg-slate-50 border-l-4 border-l-blue-600' : 'bg-white'}`}>
         <div className="flex items-center justify-between mb-1">
@@ -742,7 +1016,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
           </span>
           <button
             id={`btn-copy-${key}`}
-            onClick={() => handleCopy(value, key)}
+            onClick={() => handleCopy(displayValue, key)}
             className="p-1 px-1.5 text-slate-400 hover:text-blue-600 text-[10px] font-bold rounded-sm hover:bg-slate-50 flex items-center gap-1 transition"
             title="Copy section"
           >
@@ -762,7 +1036,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
 
         {/* Content presentation field */}
         <p className="text-[11px] sm:text-xs text-slate-650 select-all font-sans whitespace-pre-line leading-relaxed">
-          {value}
+          {displayValue}
         </p>
 
         {/* Rewrite action triggers when rewrite controller is toggled */}
@@ -863,6 +1137,9 @@ function isInputEmpty(moduleId: ModuleId, inputs: Record<string, string>): boole
   if (moduleId === 'email_writer') {
     return !inputs.purpose?.trim() || !inputs.keyPoints?.trim();
   }
+  if (moduleId === 'universal_coach') {
+    return !inputs.textToAnalyze?.trim();
+  }
   return true;
 }
 
@@ -875,6 +1152,7 @@ function getModuleNumber(id: ModuleId): string {
     case 'soft_skills': return '4';
     case 'escalation': return '5';
     case 'email_writer': return '6';
+    case 'universal_coach': return '7';
   }
 }
 
@@ -928,6 +1206,13 @@ function renderGuidedToolExplanation(id: ModuleId) {
       expected = "A compelling subject line paired with a primary email body, a concise 3-sentence summary, and a mobile SMS text.";
       tips = "Detail elements with comma-separated points so the copywriting assistant organizes them in the correct hierarchical sequence.";
       break;
+    case 'universal_coach':
+      what = "Analyzes, logs, and processes any input text as either a customer query or an email draft. Computes soft skill grades, checks policy violations, and drafts 6 variations.";
+      when = "When you receive any ambiguous stock-trading query, raw complaint, or rough draft that needs SEBI-compliant guidance or multi-tone variations.";
+      example = "I want to complain about a refund delay for my stocks payout. You guys are useless.";
+      expected = "An in-depth coaching report: detected input parameters, quality scores, angry client de-escalations, and six-fold responses in English.";
+      tips = "Paste any freeform text. The tool will automatically draft a high-quality analysis and compliant variations.";
+      break;
   }
 
   return (
@@ -976,6 +1261,7 @@ export function getModuleTitle(id: ModuleId): string {
     case 'soft_skills': return 'Brokerage Phrase & Compliance Coach';
     case 'escalation': return 'Escalation Note Architect';
     case 'email_writer': return 'AI Full-Stack Email Copywriter';
+    case 'universal_coach': return 'Intelligent CS AI Coach';
   }
 }
 
@@ -988,5 +1274,6 @@ function getModuleDescription(id: ModuleId): string {
     case 'soft_skills': return 'Evaluate client support statement drafts against positive replacements and regulatory standards.';
     case 'escalation': return 'Synthesize technical issues into elegant logs for internal senior desk teams AND customer updates simultaneously.';
     case 'email_writer': return 'Produce and format multiple template variants from a few descriptive goals.';
+    case 'universal_coach': return 'Analyze customer queries or email drafts to automatically audit compliance, score empathy, and generate six response variations.';
   }
 }

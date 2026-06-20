@@ -67,6 +67,14 @@ export default function DashboardView({ onSelectModule, stats, currentUser }: Da
       iconBg: 'bg-sky-600',
       textAccent: 'text-sky-600',
       badge: 'Copy Generator' 
+    },
+    {
+      id: 'universal_coach',
+      description: 'Analyze any text to automatically identify input type (Query or Draft), generate six variations, compute quality metrics, design de-escalations for angry clients, and perform strict financial compliance validation.',
+      icon: Sparkles,
+      iconBg: 'bg-violet-600',
+      textAccent: 'text-violet-600',
+      badge: 'Intelligent AI Coach'
     }
   ];
 

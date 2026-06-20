@@ -15,7 +15,8 @@ export type ModuleId =
   | 'call_script'
   | 'soft_skills'
   | 'escalation'
-  | 'email_writer';
+  | 'email_writer'
+  | 'universal_coach';
 
 export interface HistoryItem {
   id: string;

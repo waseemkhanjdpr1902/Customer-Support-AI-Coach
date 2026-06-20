@@ -117,12 +117,12 @@ export const apiClient = {
   },
 
   // 4. GENERATE AI COACH OUTPUT
-  async generateCoachOutput(moduleId: ModuleId, inputs: any, tone: string): Promise<any> {
+  async generateCoachOutput(moduleId: ModuleId, inputs: any, tone: string, language: string = 'en'): Promise<any> {
     try {
       const response = await fetch('/api/coach/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ moduleId, inputs, tone })
+        body: JSON.stringify({ moduleId, inputs, tone, language })
       });
       if (response.ok) {
         return await response.json();
@@ -130,16 +130,16 @@ export const apiClient = {
     } catch (e) {
       console.warn('Generation api server fallback. Running localized AI simulation engine.');
     }
-    return getSimulatedCoachFallback(moduleId, inputs, tone);
+    return getSimulatedCoachFallback(moduleId, inputs, tone, language);
   },
 
   // 5. REWRITE/MODIFICATION
-  async rewriteCoachText(originalText: string, command: string, tone: string): Promise<string> {
+  async rewriteCoachText(originalText: string, command: string, tone: string, language: string = 'en'): Promise<string> {
     try {
       const response = await fetch('/api/coach/rewrite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ originalText, command, tone })
+        body: JSON.stringify({ originalText, command, tone, language })
       });
       if (response.ok) {
         const data = await response.json();
@@ -148,7 +148,7 @@ export const apiClient = {
     } catch (e) {
       console.warn('Rewrite api server offline. Running localized modifier.');
     }
-    return getSimulatedRewrite(originalText, command, tone);
+    return getSimulatedRewrite(originalText, command, tone, language);
   },
 
   // 6. SAVE TO HISTORY
@@ -240,9 +240,180 @@ export const apiClient = {
 /**
  * CLIENT DE-ESCALATION SIMULATION MODEL
  */
-function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string) {
+function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, language: string = 'en') {
   const t = tone || "Professional";
   
+  if (language === 'hi') {
+    if (moduleId === "email_improvement") {
+      return {
+        improvedEmail: `प्रिय ग्राहक,\n\nधन्यवाद आपके मूल्यवान संपर्क के लिए। आपके द्वारा उठाए गए ${inputs.issueType || "लेनदेन संबंधी चिंता"} पर हमारी टीम गंभीरतापूर्वक विचार कर रही है। हमें आपकी असुविधा का पूरा एहसास है। ब्रोकरेज तथा विनियामक (regulatory) सेबी दिशानिर्देशों के तहत आपके मामले को हमारे वरिष्ठ पर्यवेक्षक देख रहे हैं। हम इस प्रक्रिया को त्वरित रूप से पूरा करने के लिए आपके साथ पूरी तरह से जुड़े हुए हैं।\n\nसादर,\nक्लाइंट सपोर्ट टीम`,
+        explanationOfImprovements: `टोन को पूरी तरह से ${t} बनाया गया। सीधे 'नकारात्मक मनाही' को हटाया गया। सेबी गाइडलाइन्स के तहत पारदर्शिता दी और क्लाइंट संबंध मजबूत करने के लिए अतिरिक्त सहायता का प्रावधान किया गया।`,
+        betterSubjectLine: `आपके लेनदेन एवं समाधान अनुरोध के संबंध में अपडेट`
+      };
+    }
+
+    if (moduleId === "complaint_handling") {
+      return {
+        empatheticReply: `प्रिय ग्राहक,\n\nहमें आपकी शिकायत के विवरण प्राप्त हुए हैं। सबसे पहले हमारे डिलीवरी प्रतिनिधि द्वारा दिखाए गए इस अनुचित व्यवहार के लिए कृपया हमारी अत्यंत गंभीर और बिना किसी शर्त की माफी स्वीकार करें। यह हमारे कार्य मानकों के बिल्कुल विपरीत है। आपके त्वरित निवारण के रूप में, हम तुरंत: ${inputs.resolution || "एक पूरक प्रतिस्थापन और क्रेडिट सुविधा"} चालू कर रहे हैं। हम आश्वस्त करते हैं कि ऐसी घटना भविष्य में दोबारा नहीं होगी।\n\nसदा आपका,\nक्लाइंट ऑपरेशन्स हेड`,
+        apologyLine: `आपके बहुमूल्य समय के नुकसान और इस मानसिक परेशानी के लिए हम हृदय से क्षमाप्रार्थी हैं।`,
+        resolutionWording: `हमारा निवारण विवरण: ${inputs.resolution || "तुरंत नया रिप्लेसमेंट शिपमेंट और वॉलेट क्रेडिट जोड़ दिया गया है।"}`,
+        followUpLine: `हमारी सपोर्ट टीम अगले 12 घंटों में आपके लिए पर्सनली इस आर्डर को ट्रैक करेगी और ट्रैकिंग लिंक साझा करेगी।`
+      };
+    }
+
+    if (moduleId === "call_script") {
+      return {
+        openingScript: `[अभिवादन - ${t} टोन]: "नमस्कार, सपोर्ट टीम में आपका स्वागत है! मेरा नाम [Your Name] है। आशा है आपका दिन शांतिपूर्ण बीत रहा है। आज मैं आपके लेनदेन और सेवा से जुड़े सवालों को हल करने में आपकी पूरी सहायता करूँगा।"`,
+        verificationScript: `[खाता सत्यापन]: "खाते की सुरक्षा बनाए रखने और संवेदनशील विवरणों की गोपनीयता सुनिश्चित करने के लिए, क्या आप कृपया अपना पंजीकृत मोबाइल नंबर और ईमेल आईडी सत्यापित करवा सकते हैं?"`,
+        issueExplanation: `[समर्थन संरेखण]: "मैं आपकी परिस्थिति को पूरी तरह समझ सकता हूँ। जैसा कि आपने बताया, तकनीकी त्रुटि की वजह से ${inputs.issueSummary || "खाते में दोहरा डेबिट"} दिख रहा है। आइए इसे मिलकर हल करते हैं।"`,
+        resolutionScript: `[समाधान का मार्ग]: "मैंने इसके विवरण देख लिए हैं और हम इसे आज ही सुलझा रहे हैं। हम कड़े गाइडलाइन्स के तहत एक मैनुअल ओवरराइड भेज रहे हैं जिससे आपका फंड तुरंत रिफ्लेक्ट हो जाएगा। क्या यह आपकी अपेक्षा के अनुरूप है?"`,
+        closingScript: `[समापन]: "मैंने आपके खाते में आवश्यक परिवर्तन सक्रिय कर दिए हैं। क्या मैं आज आपकी कोई और सहायता कर सकता हूँ, चाहे वह कितनी भी छोटी क्यों न हो? अपना कीमती समय देने के लिए धन्यवाद, आपका दिन शुभ हो!"`
+      };
+    }
+
+    if (moduleId === "soft_skills") {
+      const rawInput = (inputs.agentResponse || "Wait, charges are applicable").toLowerCase();
+      let issueContext = "इस पूछताछ";
+      let professional = "डिपॉजिटरी गाइडलाइन्स के तहत हम आपके विवरणों की जांच कर रहे हैं। हम सुरक्षा और अनुपालन सुनिश्चित करके जल्द ही अपडेट साझा करेंगे।";
+      let empathetic = "हम आपके फीडबैक को पूर्ण वरीयता दे रहे हैं। आश्वस्त रहें कि हमारी विशेष सहयोग टीम व्यक्तिगत रूप से इसे सुलझाने में लगी हुई है।";
+      let positive = "हमें आपके इस शुल्क विवरण को सरल भाषा में विस्तार से समझाने में बहुत प्रसन्नता होगी ताकि आप पूर्ण संतुष्टि के साथ ट्रेड कर सकें।";
+      let regulatory = "एक्सचेंज नियमों के तहत प्रत्येक डेबिट लेनदेन निर्धारित शुल्क सीमाओं से जुड़ा है। हम कड़े सेबी अनुपालन निर्देशों के तहत आपको स्पष्टीकरण भेजेंगे।";
+      let csat = "धैर्य बनाए रखने के लिए धन्यवाद! हमने आपके टिकट को हमारे श्रेणी-2 ब्रोकरेज डेस्क पर भेज दिया है ताकि त्वरित और बेहतरीन समाधान सुनिश्चित हो सके।";
+      let compliance = "मानक शर्तों के अनुसार खाता मार्जिन की गणना की गई है। कृपया वर्तमान खुली पोजीशनों की सुरक्षा के लिए आटो-लिक्विडेशन सीमा जांचें।";
+      let avoided = "सुधारित शब्द: 'वेट करो' की जगह 'धैर्य के लिए धन्यवाद' का उपयोग किया गया।";
+      
+      if (rawInput.includes("wait") || rawInput.includes("process") || rawInput.includes("withdrawal")) {
+        issueContext = "धन निकासी (withdrawal) की देरी";
+        professional = "प्रक्रियाधीन निकासी अनुरोध को लेकर आपकी प्राथमिकता हम समझते हैं। हमारी वित्त टीम इसे प्रोसेस कर रही है, धनराशि जल्द ही आपके बैंक में आएगी।";
+        empathetic = "मैं बिल्कुल समझता हूँ कि समय पर आपके पैसे मिलना कितना जरूरी है। हम अपने बैंकिंग पार्टनर के साथ लगातार संपर्क में हैं ताकी फंड तुरंत क्रेडिट हो जाए।";
+        positive = "आपकी धन निकासी उच्च प्राथमिकता की कतार में है। इसे सबसे तेज प्रोसेस करने के लिए हमारी टीम पूरी ताकत से जुटी हुई है।";
+        regulatory = "आपका निकासी अनुरोध रजिस्टर कर लिया गया है। नियामक और बैंकिंग दिशानिर्देशों के अनुसार निर्धारित सेटलमेंट चक्र के तहत यह क्रेडिट होगा।";
+        csat = "शानदार समाचार! आपका पेआउट कतार में सबसे आगे है। जैसे ही यह बैंक से पूरा होगा, हम आपको ट्रांजैक्शन आईडी के साथ तुरंत एसएमएस भेजेंगे।";
+        compliance = "आपके अनुरोध को सुरक्षित रूप से दर्ज कर लिया गया है ताकि सही और अनुपालन-सुरक्षित सेटलमेंट सुनिश्चित हो सके।";
+        avoided = "बचाव किया: 'वेट करो / प्रोसेस में है'। बेहतर वाक्यांश: 'हम आपके समय की प्राथमिकता समझते हैं और इसे ट्रैक कर रहे हैं'।";
+      }
+
+      return {
+        professionalVersion: professional,
+        empatheticVersion: empathetic,
+        positiveVersion: positive,
+        regulatoryFriendlyVersion: regulatory,
+        highCsatVersion: csat,
+        complianceSafeVersion: compliance,
+        avoidNegativeWords: avoided,
+        confidenceScore: 9,
+        empathyScore: 8,
+        professionalismScore: 9,
+        whatIsGood: `आपके वाक्य में ${issueContext} को सीधे संबोधित किया गया है।`,
+        whatNeedsImprovement: `मूल वाक्य में 'वेट करो, चार्जेस लगेंगे' जैसी रूखी शब्दावली का उपयोग है जो क्लाइंट में असंतोष पैदा कर सकती है। इसे सहानुभूतिपूर्ण बनाना आवश्यक है।`,
+        betterVersion: empathetic,
+        softSkillTip: `ब्रोकरेज सहायता में, हमेशा याद रखें कि अनुपालन (compliance) और नियमों की जानकारी प्यार से और सहानुभूति के साथ दी जानी चाहिए। जटिल वित्तीय शब्दों को छोटे बुलेट पॉइंट्स में समझाएं।`
+      };
+    }
+
+    if (moduleId === "escalation") {
+      return {
+        internalEscalationNote: `[एस्केलेशन - गंभीर स्तर] तकनीकी विसंगति अपडेट।\nअवरोध कारण: ${inputs.delayReason || "डेटाबेस सिंक धीमा होना"}.\nस्थिति: ${inputs.currentStatus || "वरिष्ठ ऑपरेशन्स समीक्षा"}.\nअगला कदम: ${inputs.nextAction || "पैच डिप्लॉयमेंट"}.`,
+        customerFacingUpdate: `प्रिय ग्राहक, हम आपके खाते की प्रोफाइल सुरक्षा पर थोड़ा अतिरिक्त ध्यान केंद्रित कर रहे हैं। हमारी वरिष्ठ तकनीकी विशेषज्ञ टीम व्यक्तिगत निगरानी में इसे हल कर रही है ताकि आपको सुचारू अनुभव मिल सके। आपके सहयोग के लिए धन्यवाद।`,
+        managerSummary: `कार्यकारी विवरण: अलर्ट के तहत मामला एस्केलेट हुआ। मुख्य कारण: ${inputs.delayReason || "फीडबैक विलंब"}. वर्तमान निवारक कदम: ${inputs.nextAction || "त्वरित ओवरराइड"}.`,
+        riskLevel: "Medium"
+      };
+    }
+
+    return {
+      subjectLine: `महत्वपूर्ण अपडेट: ${inputs.purpose || "विनियामक खाता समन्वय"}`,
+      fullEmail: `प्रिय ग्राहक,\n\nमैं आपको आपके डीमैट खाते के संबंध में ${inputs.purpose || "एक महत्वपूर्ण विवरण"} साझा करने के लिए लिख रहा हूँ।\n\nविशेष रूप से, ${inputs.keyPoints || "हमारी टीम आपके खाते में सुचारू सेवाएं सुनिश्चित कर रही है"}। हमारे वरिष्ठ अधिकारी इस पर काम कर रहे हैं। यदि आपको कोई प्रश्न पूछना हो तो कृपया निसंकोच संपर्क करें।\n\nसादर,\nक्लाइंट सक्सेस टीम`,
+      shortVersion: `आपके अनुरोध ${inputs.purpose || "के संबंध में"} त्वरित अपडेट: ${inputs.keyPoints || "हम इसे तुरंत पूरा कर रहे हैं ताकि आपको बेहतरीन अनुभव मिल सके।"}`,
+      whatsAppUpdate: `नमस्ते! क्विक सपोर्ट अपडेट: ${inputs.keyPoints || "सभी सेवाएं अच्छी तरह चालू हैं। आपका दिन शुभ हो!"}`
+    };
+  }
+
+  if (language === 'hinglish') {
+    if (moduleId === "email_improvement") {
+      return {
+        improvedEmail: `Dear Customer,\n\nThank you aapke valuable contact ke liye. Aapne jo ${inputs.issueType || "transaction related concern"} raise kiya hai, hum usko closely review kar rahe hain. Hum aapki concern ko acchi tarah samajhte hain. standard compliance rules and depository safety ke mutabik hamare senior managers isko check kar rahe hain, aur hum bahut jaldi perfect solution ke sath aapko update karenge.\n\nWarm regards,\nClient Support Team`,
+        explanationOfImprovements: `Tone ko behtar karke ${t} kiya gaya. 'Wait karo' aur 'Humaari galti nahi hai' jaise harsh words ko hata kar professional safety assurance add kiya gaya.`,
+        betterSubjectLine: `Aapke return and account adjustment request ke regarding update`
+      };
+    }
+
+    if (moduleId === "complaint_handling") {
+      return {
+        empatheticReply: `Dear Customer,\n\nWe extremely sorry to hear this. Aapka delivery driver related experience bohot problematic raha. Is inconvenient handle karne ke tareeqe ke liye please hamari sincere apology accept karein. Hamari quality team is partner ke sath strictly matter audit kar rahi hai. Aapke support ke liye hum turant response de rahe hain: ${inputs.resolution || "complimentary replacement order and credit credit add kar rahe hain"}. Hum ensure karenge ki aisa dubara na ho.\n\nWarmest regards,\nCustomer Delight Team`,
+        apologyLine: `Aapke precious time ke loss aur is problematic experience ke liye hum sincerely apologetic hain.`,
+        resolutionWording: `Resolution action: Humne aapka complimentaryreplacement order queue mein priority par daal diya hai aur account mein extra bonus apply kar diya hai.`,
+        followUpLine: `Main personally is replacement key tracking ko follow up karunga aur dispatch hote hi tracking code WhatsApp kar dunga.`
+      };
+    }
+
+    if (moduleId === "call_script") {
+      return {
+        openingScript: `[Greeting - ${t}]: "Hello and support team mein aapka swagat hai! Mera naam [Your Name] hai. Hope aapka day stable chal raha hai. Main aaj aapki query solve karne mein poori help karunga."`,
+        verificationScript: `[Safety Verification]: "Account security ko secure rakhne ke liye aur koi sensitive detail leak na ho, kya aap please apna registered email id aur phone number verify kara sakte hain?"`,
+        issueExplanation: `[Empathy Alignment]: "Main aapki situation ko samajh sakta hoon. Aapke statement ke according, technical fault ki wajah se ${inputs.issueSummary || "ledger mismatch"} show ho raha hai. Isko milkar check karte hain."`,
+        resolutionScript: `[Resolution Update]: "Maine details check kar li hain aur hum abhi immediate action le rahe hain. Hum backoffice se manual update trigger kar rahe hain jisse issue resolve ho jayega. Kya aap is solution se satisfied hain?"`,
+        closingScript: `[Closing]: "Humne changes secure kar diye hain. Kya main aapki koi aur help kar sakta hoon, chahe woh kitni bhi choti ho? Apna valuable time dene ke lye thank you aur have a great day!"`
+      };
+    }
+
+    if (moduleId === "soft_skills") {
+      const rawInput = (inputs.agentResponse || "Wait, charges are applicable").toLowerCase();
+      let issueContext = "is ticket";
+      let professional = "Depository security laws ke mutabik hum aapke details double-check kar rahe hain. Safety guidelines ke sath poori accuracy ke sath update share karenge.";
+      let empathetic = "Hum aapke concern ko poori priority de rahe hain. Aap tension mat lijiye, hamari senior customer help group isko instantly solve kar rahi hai.";
+      let positive = "Humein aapko is charge ya payment structure ko simple terms me explain karne me bohot khushi hogi takki aap asaan se trading kar sakein.";
+      let regulatory = "Stock exchange and depository rules ke according statutory charges apply hote hain. Hum safe SEBI compliance sheet aapko clarify karke bhej rahe hain.";
+      let csat = "Patience rakhne ke liye thank you! Humne is request ko tier-2 trading support desk par transfer kiya hain fast solution pane ke liye.";
+      let compliance = "Standard rules aur risk control policy ke hisab se account portfolio execute kiya gaya hai. Margin limit verify kar lein.";
+      let avoided = "Hinglish correction: 'Wait karo' jaise dry phrases ko hata kar 'patience ke liye thanks' use kiya gaya.";
+
+      if (rawInput.includes("wait") || rawInput.includes("process") || rawInput.includes("withdrawal")) {
+        issueContext = "payout withdrawal delay";
+        professional = "Hum withdrawal ki importance samajhte hain. Hamari accounting team process kar rahi hai aur direct transfer jaldi bank mein hit karega.";
+        empathetic = "I completely understand ki time par funds milna kitna important hai. Hum bank team ke sath status coordinate kar rahe hain to speed up the payout.";
+        positive = "Aapka withdrawal transaction priority level par hai. isko super-fast solve karne ke liye humne alert trigger kiya hai.";
+        regulatory = "Payout request standard banking regulations aur exchange settlement timelines ke safe path par queue mein process ho rahi hai.";
+        csat = "Good news! Aapka payout processing stage pe sabse upar hai. Jaise hi bank se clear hoga, trans. ID ke sath WhatsApp updates mil jayenge.";
+        compliance = "Account payout safely process ho raha hai aur regulatory validation aur clearing house protocol cycle cross hote hi release ho jayega.";
+        avoided = "Avoided: 'Wait karo / time lagega'. Better formulation: 'Hum is transfer ko closely track kar rahe hain aur turant clarify karenge'.";
+      }
+
+      return {
+        professionalVersion: professional,
+        empatheticVersion: empathetic,
+        positiveVersion: positive,
+        regulatoryFriendlyVersion: regulatory,
+        highCsatVersion: csat,
+        complianceSafeVersion: compliance,
+        avoidNegativeWords: avoided,
+        confidenceScore: 9,
+        empathyScore: 8,
+        professionalismScore: 9,
+        whatIsGood: `Original draft mein ${issueContext} ko clarify kiya gaya hai.`,
+        whatNeedsImprovement: `Lekin phrasing thodi robotic ya defensive hai (e.g. 'Wait, charges guidelines lagte hain'). Isko clients ki empathy se connect karna chahiye.`,
+        betterVersion: empathetic,
+        softSkillTip: `Stock broker support mein, jab koi rules aur charges push karne ho, toh hamesha language friendly aur helpful rakhein. Margin and statutory policies ko transparently share karein.`
+      };
+    }
+
+    if (moduleId === "escalation") {
+      return {
+        internalEscalationNote: `[ESCALATION - TIER HIGH] Account processing queue lag update.\nPending reason: ${inputs.delayReason || "Server backup process delay"}.\nStatus: ${inputs.currentStatus || "Special desk attention"}.\nNext step assigned: ${inputs.nextAction || "Cluster buffer deploy"}.`,
+        customerFacingUpdate: `Dear Client, hum aapke profile parameters par thoda extra deep verification focus de rahe hain. Hamari lead technical senior team ispe personally dhyan de rahi hai, jisse standard high-speed perform restore ho jayegi. Dhanyawad aapke cooperate ke liye.`,
+        managerSummary: `Executive Summary: Incident escalated safely. Main block: ${inputs.delayReason || "Fulfillment network queue"}. Current action: ${inputs.nextAction || "Override database sync"}.`,
+        riskLevel: "Medium"
+      };
+    }
+
+    return {
+      subjectLine: `Important Update: ${inputs.purpose || "Compliance Client Coordination"}`,
+      fullEmail: `Dear Customer,\n\nHum aapke account ya demat portfolio ke regarding ${inputs.purpose || "kuch regulatory confirmation"} share karne ke liye write kar rahe hain.\n\nParticularly, ${inputs.keyPoints || "hamari team aapko dynamic seamless trading features provide kar rahi hai"}. Hamari special desk isse check kar rahi hai. Kisi help ke liye humein consult karein.\n\nWarm regards,\nClient Success Team`,
+      shortVersion: `Aapke query ${inputs.purpose || "ke regarding"} quick update: ${inputs.keyPoints || "Hum action le rahe hain more details short time me share ki jayegi."}`,
+      whatsAppUpdate: `Hi! Quick support update: ${inputs.keyPoints || "Everything is clean aur perfectly active. Aapka day great ho!"}`
+    };
+  }
+
+  // Pure English Fallbacks
   if (moduleId === "email_improvement") {
     const rawContent = inputs.originalEmail || "The draft is empty.";
     return {
@@ -407,8 +578,35 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string) 
   };
 }
 
-function getSimulatedRewrite(text: string, command: string, tone?: string) {
+function getSimulatedRewrite(text: string, command: string, tone?: string, language: string = 'en') {
   const t = tone || "Professional";
+
+  if (language === 'hi') {
+    if (command === "shorten") {
+      return text.length > 40 ? text.substring(0, text.length / 2) + " (शीघ्र संचार के लिए संक्षिप्त रूप में संपादित)" : text;
+    }
+    if (command === "make_polite") {
+      return `धैर्य रखने के लिए आपका धन्यवाद। हम तुरंत जांच करके आपकी सहायता करने में प्रसन्न होंगे: ${text}`;
+    }
+    if (command === "make_professional") {
+      return `हम आपके विवरणों की औपचारिक जांच कर रहे हैं ताकि अनुपालन-सुरक्षित सेवा सुनिश्चित हो सके: ${text}`;
+    }
+    return text;
+  }
+
+  if (language === 'hinglish') {
+    if (command === "shorten") {
+      return text.length > 45 ? text.substring(0, text.length * 0.6) + " (Short and direct communication ke liye edit kiya)" : text;
+    }
+    if (command === "make_polite") {
+      return `Thank you so much aapke cooperation ke liye. Hum turant isko review karke solve kar rahe hain taaki aap satisfied ho sakein: ${text}`;
+    }
+    if (command === "make_professional") {
+      return `Hum strict company safety guidelines and rules ko verify karke isko resolve kar rahe hain: ${text}`;
+    }
+    return text;
+  }
+
   if (command === "shorten") {
     return text.length > 50 
       ? text.substring(0, text.length / 2) + " (Synthesized and condensed to enhance communication focus)" 
