@@ -5,6 +5,8 @@ import {
 } from 'lucide-react';
 import { ModuleId } from '../types';
 
+const brandLogo = "/src/assets/images/coach_ai_logo_1781955449391.jpg";
+
 interface HomeViewProps {
   onSelectFeature: (tabId: string) => void;
   stats: {
@@ -16,68 +18,28 @@ interface HomeViewProps {
 export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
   const FEATURES = [
     {
-      id: 'email_improvement',
-      title: 'Email Improvement',
-      description: 'Polishes rough email responses into professional, empathetic drafts aligned with target tones.',
+      id: 'email_coach',
+      title: 'AI Email Draft Writer',
+      description: 'Unified financial support assistant. Compose, improve, reply, adjust tone (professional, empathetic, or firm), or generate comprehensive templates under standard regulatory compliance.',
       icon: Mail,
       iconBg: 'bg-blue-500/10 text-blue-600 border border-blue-500/20',
-      actionLabel: 'Open Email Tool'
-    },
-    {
-      id: 'complaint_handling',
-      title: 'Complaint Handling',
-      description: 'Frames unreserved, empathetic response logs to de-escalate angry client feedback.',
-      icon: Smile,
-      iconBg: 'bg-rose-500/10 text-rose-600 border border-rose-500/20',
-      actionLabel: 'Open De-escalate'
-    },
-    {
-      id: 'call_script',
-      title: 'Call Script Generator',
-      description: 'Produces structured 5-part interactive phone guides tailored for patient greetings and solutions.',
-      icon: Phone,
-      iconBg: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20',
-      actionLabel: 'Open Scriptor'
+      actionLabel: 'Open Email Writer'
     },
     {
       id: 'soft_skills',
-      title: 'Brokerage Phrase Coach',
-      description: 'Provides 10-point audits of agent statements to generate compliant and high-empathy stock-trading variations.',
-      icon: Award,
+      title: 'Brokerage Phrase Library',
+      description: 'A curated interactive reference of SEBI and depository compliant customer interaction alternatives for prompt stock-trading and portfolio support.',
+      icon: MessageSquare,
       iconBg: 'bg-indigo-500/10 text-indigo-600 border border-indigo-500/20',
-      actionLabel: 'Open Coach'
+      actionLabel: 'Open Phrase Library'
     },
     {
       id: 'escalation',
-      title: 'Escalation Handling',
-      description: 'Formulates technical senior logs and customerupdates simultaneously during account incidents.',
+      title: 'Escalation Assistant',
+      description: 'Formulate dual-facing communications for incident situations: polished internal supervisor updates and compliant client notices simultaneously.',
       icon: ShieldAlert,
       iconBg: 'bg-amber-500/10 text-amber-600 border border-amber-500/20',
-      actionLabel: 'Open Escalator'
-    },
-    {
-      id: 'email_writer',
-      title: 'AI Email Writer',
-      description: 'Auto-generates multi-format customer templates including full emails and quick WhatsApp notices.',
-      icon: FileText,
-      iconBg: 'bg-sky-500/10 text-sky-600 border border-sky-500/20',
-      actionLabel: 'Open Writer'
-    },
-    {
-      id: 'phrase_library',
-      title: 'Phrase Library',
-      description: 'Access a positive phrasing bank containing instant verbal alternatives for standard team responses.',
-      icon: MessageSquare,
-      iconBg: 'bg-violet-500/10 text-violet-600 border border-violet-500/20',
-      actionLabel: 'Open Library'
-    },
-    {
-      id: 'learning_center',
-      title: 'Team Learning Center',
-      description: 'Explore curated lists of de-escalation checklists, team standards, and helpful customer strategies.',
-      icon: BookOpenCheck,
-      iconBg: 'bg-teal-500/10 text-teal-600 border border-teal-500/20',
-      actionLabel: 'Open Learning'
+      actionLabel: 'Open Escalation Assistant'
     }
   ];
 
@@ -94,13 +56,23 @@ export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
             Empowering Exceptional Customer Support
           </div>
           
-          <h1 className="text-2.5xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white font-sans">
-            Customer Support AI Coach
-          </h1>
-          
-          <p className="text-blue-200/90 text-sm sm:text-base font-medium leading-relaxed">
-            A simple internal AI assistant for improving customer emails, complaint handling, call scripts, escalation responses, and soft skills.
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+            <img 
+              src={brandLogo} 
+              alt="COACH.AI Logo" 
+              className="w-16 h-16 rounded-lg object-cover border-2 border-blue-500/20 shadow-md shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <div>
+              <h1 className="text-2.5xl sm:text-4xl font-extrabold tracking-tight leading-tight text-white font-sans">
+                Customer Support AI Coach
+              </h1>
+              
+              <p className="text-blue-200/90 text-sm sm:text-base font-medium leading-relaxed mt-1">
+                A simple internal AI assistant for improving customer emails, complaint handling, call scripts, escalation responses, and soft skills.
+              </p>
+            </div>
+          </div>
           
           <div className="h-px bg-slate-800 my-4"></div>
           
@@ -113,7 +85,7 @@ export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
               onClick={() => onSelectFeature('tools')}
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-sm tracking-wide transition flex items-center gap-1 cursor-pointer uppercase shadow"
             >
-              Initialize Coaching Playground
+              Initialize AI Workbench
               <ChevronRight className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-2.5 text-xs text-slate-400 font-mono">
@@ -132,7 +104,7 @@ export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
             Integrated Training & Copywriting Features
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Pick from our specialized playgrounds to get micro-feedback coaching or draft standard text.
+            Pick from our specialized workbench modules to get micro-feedback coaching or draft standard text.
           </p>
         </div>
 

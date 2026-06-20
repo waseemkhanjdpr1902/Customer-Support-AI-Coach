@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -159,23 +160,92 @@ function saveDb(data: any) {
   }
 }
 
-// Unified AI Client with OpenAI-First, Groq-Fallback Retry Logic
+// Unified AI Client with Gemini-First, Groq-Second, OpenAI-Third Fallback Retry Logic
 async function generateAIResponse(prompt: string, systemPrompt: string, requireJson: boolean = false): Promise<string> {
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const geminiKey = process.env.GEMINI_API_KEY;
   const groqKey = process.env.GROQ_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
 
-  const hasOpenAI = openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "";
+  const hasGemini = geminiKey && geminiKey !== "MY_GEMINI_API_KEY" && geminiKey.trim() !== "";
   const hasGroq = groqKey && groqKey !== "MY_GROQ_API_KEY" && groqKey.trim() !== "";
+  const hasOpenAI = openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "";
 
-  if (!hasOpenAI && !hasGroq) {
+  if (!hasGemini && !hasGroq && !hasOpenAI) {
     throw new Error("NO_KEYS_TRIGGER_SIMULATION");
   }
 
   let responseText = "";
   let providerUsed = "";
 
-  // 1. Try OpenAI
-  if (hasOpenAI) {
+  // 1. Try Gemini first
+  if (hasGemini) {
+    try {
+      const ai = new GoogleGenAI({
+        apiKey: geminiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0.85,
+          responseMimeType: requireJson ? "application/json" : undefined,
+        }
+      });
+
+      if (response && response.text) {
+        responseText = response.text;
+        providerUsed = "Gemini";
+      } else {
+        console.warn(`[AI SERVICE] Gemini returned an empty response text.`);
+      }
+    } catch (geminiError: any) {
+      console.warn(`[AI SERVICE] Primary Gemini service failed. Error: ${geminiError.message}`);
+    }
+  }
+
+  // 2. Try Groq second
+  if (!responseText && hasGroq) {
+    try {
+      const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${groqKey}`
+        },
+        body: JSON.stringify({
+          model: model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.85,
+          response_format: requireJson ? { type: "json_object" } : undefined
+        }),
+      });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        responseText = data.choices?.[0]?.message?.content || "";
+        providerUsed = "Groq";
+      } else {
+        const errorText = await response.text();
+        console.warn(`[AI SERVICE] Groq returned status ${response.status}: ${errorText}`);
+      }
+    } catch (groqError: any) {
+      console.warn(`[AI SERVICE] Secondary Groq service failed. Error: ${groqError.message}`);
+    }
+  }
+
+  // 3. Try OpenAI third
+  if (!responseText && hasOpenAI) {
     try {
       const model = process.env.OPENAI_MODEL || "gpt-4o-mini";
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -204,41 +274,7 @@ async function generateAIResponse(prompt: string, systemPrompt: string, requireJ
         console.warn(`[AI SERVICE] OpenAI returned status ${response.status}: ${errorText}`);
       }
     } catch (openaiError: any) {
-      console.warn(`[AI SERVICE] Primary OpenAI service failed. Error: ${openaiError.message}`);
-    }
-  }
-
-  // 2. Try Groq (if OpenAI failed or wasn't configured, and Groq is)
-  if (!responseText && hasGroq) {
-    try {
-      const model = process.env.GROQ_MODEL || "llama-3.1-8b-instant";
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${groqKey}`
-        },
-        body: JSON.stringify({
-          model: model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.7,
-          response_format: requireJson ? { type: "json_object" } : undefined
-        }),
-      });
-
-      if (response.ok) {
-        const data: any = await response.json();
-        responseText = data.choices?.[0]?.message?.content || "";
-        providerUsed = "Groq";
-      } else {
-        const errorText = await response.text();
-        console.warn(`[AI SERVICE] Groq returned status ${response.status}: ${errorText}`);
-      }
-    } catch (groqError: any) {
-      console.error(`[AI SERVICE] Fallback Groq service also failed. Error: ${groqError.message}`);
+      console.error(`[AI SERVICE] Fallback OpenAI service failed. Error: ${openaiError.message}`);
     }
   }
 
@@ -481,9 +517,11 @@ app.post("/api/coach/generate", async (req, res) => {
   }
 
   // Check if standard keys are configured
+  const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   const groqKey = process.env.GROQ_API_KEY;
-  const hasKeys = (openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "") ||
+  const hasKeys = (geminiKey && geminiKey !== "MY_GEMINI_API_KEY" && geminiKey.trim() !== "") ||
+                  (openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "") ||
                   (groqKey && groqKey !== "MY_GROQ_API_KEY" && groqKey.trim() !== "");
 
   if (!hasKeys) {
@@ -497,6 +535,41 @@ app.post("/api/coach/generate", async (req, res) => {
     let promptText = "";
 
     switch (moduleId) {
+      case "email_coach":
+        systemInstruction = `You are a Senior Customer Support AI Coach specializing in stock market and financial services team coaching in English.
+        
+Your job is to draft or improve customer support emails based on the user's instructions.
+You must automatically detect the context, type of query (e.g. KYC, demat, closure, unauthorized trade), and customer sentiment.
+
+STRICT COMPLIANCE DIRECTIVE:
+1. Do NOT promise profit or make investment predictions under any circumstances.
+2. Do NOT give investment advice or guarantee returns.
+3. Use compliant, professional language.
+4. If there is unauthorized trade, fraud, legal, financial loss, or regulatory complaint, you MUST trigger an escalated path or recommend immediate supervisor review.
+
+Respond strictly using a reliable JSON object matching this schema structures:
+{
+  "detectedInputType": "Customer Query" | "Agent Reply / Email Draft",
+  "customerSentiment": "Calm" | "Frustrated" | "Angry",
+  "priorityLevel": "Low" | "Medium" | "High",
+  "recommendedTone": "E.g. Professional & Empathetic",
+  "subjectLine": "A compelling, clear, optimized support email subject line.",
+  "finalEmailDraft": "The complete improved or drafted customer-facing email.",
+  "shortVersion": "A condensed, concise 3-sentence version of the email draft.",
+  "moreEmpatheticVersion": "The email draft rewritten in an exceptionally compassionate, understanding, and supportive tone.",
+  "moreProfessionalVersion": "The email draft rewritten in high-level business formal compliance-safe wording.",
+  "keyImprovementsMade": "Bullet list explaining key changes made to tone, structure, and clarity, and why they help.",
+  "wordsPhrasesToAvoid": "Bullet list of raw, low-empathy, or non-compliant phrases to avoid and their replacements."
+}`;
+
+        promptText = `Email Task Goal: "${inputs.emailTask}" (e.g., Improve Existing Email, Write New Customer Reply, Write Internal Escalation Email, etc.)
+Input Core Text: "${inputs.emailInputText}"
+Desired Tone Goal: "${tone}"
+
+Analyze, detect context, align with stock market compliance rules, and generate the response in the requested language: "${language}".
+Respond ONLY with raw JSON matching the schema of email_coach. No conversational preambles or markdown backticks outside.`;
+        break;
+
       case "email_improvement":
         systemInstruction = "You are an expert customer service training coach. Your job is to rewrite rough drafts of support emails to be highly professional, Empathetic, or Polite based on the desired tone, while explaining the coaching corrections made.";
         promptText = `Improve the following support email.
@@ -738,9 +811,11 @@ app.post("/api/coach/rewrite", async (req, res) => {
   }
 
   // Check if standard keys are configured
+  const geminiKey = process.env.GEMINI_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
   const groqKey = process.env.GROQ_API_KEY;
-  const hasKeys = (openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "") ||
+  const hasKeys = (geminiKey && geminiKey !== "MY_GEMINI_API_KEY" && geminiKey.trim() !== "") ||
+                  (openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "") ||
                   (groqKey && groqKey !== "MY_GROQ_API_KEY" && groqKey.trim() !== "");
 
   if (!hasKeys) {
@@ -788,6 +863,45 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, 
   const t = tone || "Professional";
   
   if (language === 'hi') {
+    if (moduleId === "email_coach") {
+      const rawText = inputs.emailInputText || "";
+      const task = inputs.emailTask || "Improve Existing Email";
+      const textLower = rawText.toLowerCase();
+
+      let topic = "डीमैट खाता और केवाईसी विवरण";
+      let isEscalationTrigger = false;
+
+      if (textLower.includes("demat") || textLower.includes("dmat")) {
+        topic = "डीमैट खाता और होल्डिंग्स";
+      } else if (textLower.includes("trading") || textLower.includes("trade")) {
+        topic = "ट्रेडिंग खाता सक्रियण (Activation)";
+      } else if (textLower.includes("payout") || textLower.includes("withdrawal") || textLower.includes("funds")) {
+        topic = "फंड्स निकासी पेआउट सेटलमेंट";
+      } else if (textLower.includes("unauthorized") || textLower.includes("loss") || textLower.includes("fraud")) {
+        topic = "अनाधिकृत लेनदेन सुरक्षा ऑडिट";
+        isEscalationTrigger = true;
+      }
+
+      let customerSentiment = "शांतिपूर्ण (Calm)";
+      if (textLower.includes("useless") || textLower.includes("worst") || textLower.includes("cheat") || textLower.includes("angry") || textLower.includes("unauthorized")) {
+        customerSentiment = "क्रोधित (Angry)";
+      }
+
+      return {
+        detectedInputType: textLower.includes("dear") || textLower.includes("sincerely") ? "एजेंट ड्राफ्ट (Agent Draft)" : "ग्राहक प्रश्न (Customer Query)",
+        customerSentiment,
+        priorityLevel: isEscalationTrigger ? "उच्च (High)" : "मध्यम (Medium)",
+        recommendedTone: "विनम्र एवं अनुपालन-सुरक्षित (Polite & Compliance Safe)",
+        subjectLine: `डीमैट अकाउंट ${topic} समाधान संदर्भ संख्या: #${Math.floor(100000 + Math.random() * 900000)}`,
+        finalEmailDraft: `प्रिय निवेशक,\n\nआपके ${topic} के संबंध में अनुरोध प्राप्त हुआ है। हम स्पष्ट करना चाहते हैं कि सेबी (SEBI) और विनियामक दिशानिर्देशों के तहत आपके फंड और होल्डिंग्स पूरी तरह से सुरक्षित हैं।\n\nकृपया ध्यान दें कि शेयर बाज़ार निवेश जोखिमों के अधीन हैं, और हम किसी भी तरह के निश्चित लाभ (guaranteed profits) का वादा नहीं करते हैं। आपके अनुरोध का तुरंत निस्तारण हमारे वरिष्ठ अधिकारियों द्वारा निष्पादित किया जा रहा है।\n\nसादर,\nक्लाइंट ऑपरेशन्स टीम`,
+        shortVersion: `प्रिय निवेशक, आपके ${topic} पर हमारी कंप्लायंस टीम काम कर रही है। कृपया सुनिश्चित करें कि लेनदेन मानकों के अनुसार है, हम जल्द अपडेट साझा करेंगे।`,
+        moreEmpatheticVersion: `प्रिय निवेशक,\n\nहम आपके ${topic} को लेकर आपकी चिंता को पूरी तरह समझ सकते हैं। हम आपकी सहायता के लिए सदैव तत्पर हैं और आपके खाते के समाधान के लिए विशेष ध्यान दे रहे हैं। धन्यवाद आपके धैर्य के लिए।`,
+        moreProfessionalVersion: `विषय: ${topic} के संबंध में विवरण ऑडिट।\n\nविनियामक मानकों (Regulatory Standards) के तहत डीमैट और रिस्क ऑडिट का कार्य प्रक्रिया में है। हम बिना किसी बाह्य प्रभाव के निष्पक्ष जांच संपन्न करेंगे।`,
+        keyImprovementsMade: `1. **विनियामक अनुपालन**: बाज़ार जोखिमों और सेबी गाइडलाइन्स के तहत सही अनुपालन वाक्य शामिल किए।\n2. **सहानुभूतिपूर्ण शब्दावली**: ग्राहक की हताशा को स्वीकार कर भरोसेमंद भरोसा दिलाया।`,
+        wordsPhrasesToAvoid: `* "वेट करो" -> "हम त्वरित समाधान के लिए तत्पर हैं"\n* "गारंटीड मुनाफ़ा" -> "शेयर बाज़ार निवेश जोखिम के अधीन है"`
+      };
+    }
+
     if (moduleId === "email_improvement") {
       return {
         improvedEmail: `प्रिय ग्राहक,\n\nधन्यवाद आपके मूल्यवान संपर्क के लिए। आपके द्वारा उठाए गए ${inputs.issueType || "लेनदेन संबंधी चिंता"} पर हमारी टीम गंभीरतापूर्वक विचार कर रही है। हमें आपकी असुविधा का पूरा एहसास है। ब्रोकरेज तथा विनियामक (regulatory) सेबी दिशानिर्देशों के तहत आपके मामले को हमारे वरिष्ठ पर्यवेक्षक देख रहे हैं। हम इस प्रक्रिया को त्वरित रूप से पूरा करने के लिए आपके साथ पूरी तरह से जुड़े हुए हैं।\n\nसादर,\nक्लाइंट सपोर्ट टीम`,
@@ -873,6 +987,45 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, 
   }
 
   if (language === 'hinglish') {
+    if (moduleId === "email_coach") {
+      const rawText = inputs.emailInputText || "";
+      const task = inputs.emailTask || "Improve Existing Email";
+      const textLower = rawText.toLowerCase();
+
+      let topic = "Demat account and KYC verification query";
+      let isEscalationTrigger = false;
+
+      if (textLower.includes("demat") || textLower.includes("dmat")) {
+        topic = "Demat Account holding and shares portfolio";
+      } else if (textLower.includes("trading") || textLower.includes("trade")) {
+        topic = "Trading account active state";
+      } else if (textLower.includes("payout") || textLower.includes("withdrawal") || textLower.includes("funds")) {
+        topic = "Funds withdrawal payout transactions";
+      } else if (textLower.includes("unauthorized") || textLower.includes("loss") || textLower.includes("fraud")) {
+        topic = "Unauthorized trading and risk audit security";
+        isEscalationTrigger = true;
+      }
+
+      let customerSentiment = "Calm";
+      if (textLower.includes("useless") || textLower.includes("worst") || textLower.includes("cheat") || textLower.includes("angry") || textLower.includes("unauthorized")) {
+        customerSentiment = "Angry";
+      }
+
+      return {
+        detectedInputType: textLower.includes("dear") || textLower.includes("sincerely") ? "Agent Email Draft" : "Customer Query",
+        customerSentiment,
+        priorityLevel: isEscalationTrigger ? "High " : "Medium",
+        recommendedTone: "Empathetic, Polite & SEBI compliant",
+        subjectLine: `Sincere Update: Aapke ${topic} query ke regarding Ref #${Math.floor(100000 + Math.random() * 900000)}`,
+        finalEmailDraft: `Dear Investor,\n\nAapke ${topic} inquiry ke regarding humne detail review start kiya hai. Hum assure karna chahte hain ki standard SEBI exchange rules and depository guidelines ke tehet aapke funds dynamic mode me completely safe hain.\n\nPlease note ki brokerage market investments are subject to risk parameters, aur hum koi guaranteed return ya profits promise nahi karte. Hamari compliance and backend risk management desk aapke file ko manual check karke verify kar rahe hain taaki issue super fast sort out ho sake.\n\nWarm regards,\nClient Operations Support Desk`,
+        shortVersion: `Dear Investor, aapke ${topic} report par hamari compliance audit desk task review kar rahi hai. Regulatory safety checks secure hote hi clearance code update diya jayega.`,
+        moreEmpatheticVersion: `Dear Partner,\n\nHum completely samajh sakte hain ki aap is ${topic} delay ko lekar kitne frustrated hain. Hum dil se appreciate karte hain aapke patience ko. Aapki security hamari absolute preference hai, isliye hum is transfers ko priority tracking guidelines me handle kar rahe hain.`,
+        moreProfessionalVersion: `Subject: Standard Audit Notification for ${topic}.\n\nPursuant to brokerage regulatory guidelines, your portfolio ledger is currently in verification audit. The finalized incident reports and settlement statements will be shared legally in standard working hours.`,
+        keyImprovementsMade: `1. **Compliance Disclosure Integration**: "No profit promise" and "Market risk" disclosures gracefully include kiye bina rudeness ke.\n2. **Clear Milestones**: Customer ko process aur compliance check ke progress ke steps specify kiye simple Hinglish language me.`,
+        wordsPhrasesToAvoid: `* "Wait karo" -> "We are actively resolving it under priority checks"\n* "Profit ki guarantee hai" -> "Investments are subject to audit and risk regulations"`
+      };
+    }
+
     if (moduleId === "email_improvement") {
       return {
         improvedEmail: `Dear Customer,\n\nThank you aapke valuable contact ke liye. Aapne jo ${inputs.issueType || "transaction related concern"} raise kiya hai, hum usko closely review kar rahe hain. Hum aapki concern ko acchi tarah samajhte hain. standard compliance rules and depository safety ke mutabik hamare senior managers isko check kar rahe hain, aur hum bahut jaldi perfect solution ke sath aapko update karenge.\n\nWarm regards,\nClient Support Team`,
@@ -958,19 +1111,157 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, 
   }
 
   // Pure English Fallbacks
-  if (moduleId === "email_improvement") {
-    const rawContent = inputs.originalEmail || "The draft is empty.";
+  if (moduleId === "email_coach") {
+    const rawText = inputs.emailInputText || "";
+    const task = inputs.emailTask || "Improve Existing Email";
+    const textLower = rawText.toLowerCase();
+
+    // Context / Keyword detection
+    let topic = "account status";
+    let isEscalationTrigger = false;
+
+    if (textLower.includes("demat") || textLower.includes("dmat")) {
+      topic = "Demat Account and Portfolio Holdings";
+    } else if (textLower.includes("trading")) {
+      topic = "Trading Account Activation";
+    } else if (textLower.includes("kyc") || textLower.includes("pan") || textLower.includes("aadhaar")) {
+      topic = "KYC Re-verification and Document Onboarding";
+    } else if (textLower.includes("closure") || textLower.includes("close")) {
+      topic = "Account Closure Request and Transfer Protocol";
+    } else if (textLower.includes("payout") || textLower.includes("withdrawal") || textLower.includes("funds")) {
+      topic = "Funds Withdrawal Payout Settlement";
+    } else if (textLower.includes("margin") || textLower.includes("pledge") || textLower.includes("collateral")) {
+      topic = "Margin Shortfall & Collateral Pledging";
+    } else if (textLower.includes("cdsl") || textLower.includes("nsdl") || textLower.includes("rta")) {
+      topic = "Depositories (CDSL/NSDL) and Registrar holdings transfer";
+    } else if (textLower.includes("dividend")) {
+      topic = "Corporate Dividend Disbursements";
+    } else if (textLower.includes("unauthorized") || textLower.includes("loss") || textLower.includes("fraud") || textLower.includes("legal") || textLower.includes("regulatory") || textLower.includes("sebi")) {
+      topic = "Security Dispute / Unauthorized Transaction Audit Inquiry";
+      isEscalationTrigger = true;
+    }
+
+    // Sentiment detection
+    let customerSentiment = "Calm";
+    if (textLower.includes("useless") || textLower.includes("worst") || textLower.includes("cheat") || textLower.includes("angry") || textLower.includes("fraud") || textLower.includes("delay") || textLower.includes("!!") || textLower.includes("loss") || textLower.includes("unauthorized")) {
+      customerSentiment = "Angry";
+    } else if (textLower.includes("waiting") || textLower.includes("please help") || textLower.includes("stuck") || textLower.includes("error")) {
+      customerSentiment = "Frustrated";
+    }
+
+    // Priority level
+    let priorityLevel = "Medium";
+    if (isEscalationTrigger || customerSentiment === "Angry") {
+      priorityLevel = "High";
+    } else if (textLower.length < 15 && textLower.length > 0) {
+      priorityLevel = "Low";
+    }
+
+    // Tone recommendation
+    let recommendedTone = "Professional & Empathetic";
+    if (isEscalationTrigger) {
+      recommendedTone = "Formal Regulatory-Compliant / Escalated Focus";
+    } else if (customerSentiment === "Angry") {
+      recommendedTone = "High Empathy & Ownership";
+    }
+
+    // Constructing subject line
+    let subjectLine = `Update regarding your ${topic} : Case Ref #${Math.floor(100000 + Math.random() * 900000)}`;
+    if (task.includes("Escalation")) {
+      subjectLine = `[ESCALATION ALERT - URGENT] Technical / Compliance Audit - ${topic}`;
+    } else if (task.includes("Apology")) {
+      subjectLine = `Sincere Apology & Resolution: Your ${topic}`;
+    }
+
+    // Final Email Draft based on Task
+    let finalEmailDraft = "";
+    let shortVersion = "";
+    let moreEmpatheticVersion = "";
+    let moreProfessionalVersion = "";
+    
+    if (isEscalationTrigger) {
+      finalEmailDraft = `Dear Client,\n\nWe understand your concern regarding the unauthorized transaction activity mentioned in your report: "${rawText.substring(0, 80)}...". Please note that as a registered stock broker, we take all regulatory and security parameters with absolute seriousness.\n\nBased on your audit submission, we have locked your trading terminal temporarily to prevent any further operations and have initiated an immediate forensic review with our Risk Management desk and the respective Depository. We must clarify that we do not promise profits or provide unilateral guarantees, but we are conducting a complete investigation in compliance with regulatory rules.\n\nYour case has been escalated to Tier-3 support, and a senior incident officer will reach out to you within 2 hours with formal updates.\n\nSincerely,\nCompliance & Risk Operations Lead`;
+    } else if (task.includes("Escalation")) {
+      finalEmailDraft = `Dear Team,\n\nWe have received an escalation requirement regarding a customer's ${topic} query:\n"${rawText.substring(0, 100)}". \n\nPlease note that standard settlement parameters are being reviewed. Engineering must log into clearing logs and confirm. Standard SEBI compliance boundaries prevent us from making any absolute guarantees, but we request the desk to run manual database validations.\n\nWarm regards,\nLead Operations Coordinator`;
+    } else if (task.includes("Apology")) {
+      finalEmailDraft = `Dear Investor,\n\nPlease accept our sincere and unreserved apologies for the delay and distress you have experienced regarding your ${topic}. We understand how crucial timely updates are for your investment management. \n\nWe have reviewed your request: "${rawText.substring(0, 80)}...", and our clearing desk has applied manual adjustments to expedite processing. Please be assured that we are taking concrete steps to resolve this, and we thank you for your patience as we make this right.\n\nWarm regards,\nSupervisor, Executive Client Relations`;
+    } else {
+      finalEmailDraft = `Dear Client,\n\nThank you for reaching out to us regarding your query on "${rawText.substring(0, 150)}". We understand your concern and want to assist you directly.\n\nBased on the information available, we verify that your request regarding ${topic} is currently processing under standard guidelines. Please note that market-related investments are subject to risk parameters, and we do not provide unilateral investment advice or promise guaranteed returns. Our team is actively reviewing your portfolio configurations to ensure a seamless experience.\n\nSincerely,\nClient Relations Team`;
+    }
+
+    shortVersion = `Dear Client, we are actively processing your request regarding your ${topic}. We verify that safety checks are being executed under standard compliance guidelines. We do not provide investment returns advice, but we are prioritizing your resolution.`;
+    
+    moreEmpatheticVersion = `Dear Investor,\n\nWe genuinely hear you, and we fully understand how stressful waiting on your ${topic} can be. We appreciate you sharing your details: "${rawText.substring(0, 80)}...". Please rest assured your capital and personal details are fully safe. We are closely monitoring this settlement from our end and will personally make sure this is updated for you as quickly as possible. Thank you for standing by us.`;
+
+    moreProfessionalVersion = `Dear Customer,\n\nWe refer to your query regarding the ${topic} of your account ("${rawText.substring(0, 80)}"). Based on the information available, your file is being reviewed in strict accordance with exchange guidelines. Please note that all market investments carry associated risks, and we do not issue guaranteed assertions. We will share formal status reports upon completion of our compliance review.`;
+
+    const keyImprovements = `1. **Client-Centric Validation**: Replaced any defensive/rigid sentences with polite, supportive validation of user concerns.\n2. **Compliance Framework Alignment**: Added necessary disclosures (no profit promising, no investment advice) smoothly to protect both agent and firm.\n3. **Clarity on Next-Steps**: Provided direct, actionable guidance on timelines instead of vague words like 'Wait for some time'.`;
+
+    const wordsToAvoid = `* "Wait / Delay" -> Replaced with: "We are actively monitoring/prioritizing your settlement"\n* "Not possible / Rules say so" -> Replaced with: "In accordance with standard regulatory reviews..."\n* "Promise / Guarantee returns" -> Replaced with: "Investments are subject to market risks/safety protocols"`;
+
     return {
-      improvedEmail: `Dear Customer,\n\nThank you for sharing your concerns regarding ${inputs.issueType || "this transaction"}. We completely understand your perspective, and we want to help resolve this smoothly. Under standard service guidelines, we are working closely with our fulfillment supervisors. To safeguard your experience, we have applied immediate active adjustments and would love to coordinate the most appropriate resolutions.\n\nWarmest regards,\nCustomer Support Team`,
+      detectedInputType: rawText.includes("Dear") || rawText.includes("Sincerely") ? "Agent Reply / Email Draft" : "Customer Query",
+      customerSentiment,
+      priorityLevel,
+      recommendedTone,
+      subjectLine,
+      finalEmailDraft,
+      shortVersion,
+      moreEmpatheticVersion,
+      moreProfessionalVersion,
+      keyImprovementsMade: keyImprovements,
+      wordsPhrasesToAvoid: wordsToAvoid
+    };
+  }
+
+  // Pure English Fallbacks
+  if (moduleId === "email_improvement") {
+    let emailText = "";
+    const toneLower = t.toLowerCase();
+
+    if (toneLower === "empathetic" || toneLower === "empathy") {
+      emailText = `Dear Customer,\n\nWe want to start by thanking you for bringing this up, and we genuinely understand how challenging this must be for you. We know that waiting or dealing with issues regarding ${inputs.issueType || "this transaction"} can be incredibly frustrating. Please rest assured we are working directly alongside our supervisor team to handle this with the utmost care and resolve it as quickly as possible. Your peace of mind means everything to us.\n\nWarmest regards,\nYour Customer Support Team`;
+    } else if (toneLower === "polite") {
+      emailText = `Dear Customer,\n\nThank you so much for your patience. It is our absolute pleasure to assist you with your inquiries regarding ${inputs.issueType || "this transaction"}. Our team is currently reviewing your request with our department supervisor to ensure a smooth, delightful resolution. Please feel free to reach out to us at any time if you have any questions.\n\nWith warm wishes,\nCustomer Care Team`;
+    } else if (toneLower === "firm") {
+      emailText = `Dear Customer,\n\nThank you for contacting us regarding ${inputs.issueType || "this transaction"}. We wish to clarify that our operations are carried out in strict compliance with our service guidelines and established regulatory frameworks. Our supervisor team is conducting a formal audit of your request. Please note that all transactions must satisfy standard compliance thresholds prior to any manual release.\n\nSincerely,\nCompliance Security Desk`;
+    } else if (toneLower === "apology") {
+      emailText = `Dear Customer,\n\nPlease accept our sincere and unreserved apologies for the delay and frustration regarding ${inputs.issueType || "this transaction"}. We completely understand your disappointment and take full responsibility for this communication break. Our supervisors have taken immediate intervention to apply the necessary adjustments manually to ensure no further delay occurs.\n\nSincerely,\nCustomer Relations Supervisor`;
+    } else if (toneLower === "escalation") {
+      emailText = `Dear Customer,\n\nWe have initiated high-priority escalation protocols regarding your ${inputs.issueType || "transaction status"}. Your concern has been elevated directly to our senior supervisory desk. We are conducting an active technical audit to resolve the bottleneck and will share the final resolution details within 2 hours.\n\nRespectfully yours,\nSenior Lead Incident Coordinator`;
+    } else { // Professional
+      emailText = `Dear Customer,\n\nThank you for sharing your concerns regarding ${inputs.issueType || "this transaction"}. We have received your inquiry and are currently reviewing your account details in accordance with our standard service guidelines. Our supervisor team is investigating the matter and will proceed with the appropriate adjustments as soon as the review is complete.\n\nSincerely,\nOperations Support Team`;
+    }
+
+    return {
+      improvedEmail: emailText,
       explanationOfImprovements: `Adjusted tone to be fully ${t}. Removed aggressive constraints and blamed framing. Highlighted team coordination and support avenues over static policies to preserve relationship trust.`,
       betterSubjectLine: `Update regarding your recent concern: ${inputs.issueType || "Support Ticket"}`
     };
   }
 
   if (moduleId === "complaint_handling") {
+    let replyText = "";
+    let apologyLine = `Please accept our sincere apologies for the clear distress and waste of your valuable time.`;
+    const toneLower = t.toLowerCase();
+
+    if (toneLower === "empathetic" || toneLower === "empathy") {
+      replyText = `Dear Client,\n\nWe hear you loud and clear, and we genuinely feel your frustration. Your experience with our ${inputs.issueType || "service"} fell far short of what you deserve, and your disappointment is completely valid. To address this immediately, we are initiating a dedicated remedy: ${inputs.resolution || "immediate technical sweep"}. Please rest assured we are standing by you to make things right.\n\nSincerely,\nClient Experience Team`;
+    } else if (toneLower === "polite") {
+      replyText = `Dear Client,\n\nThank you so much for contacting us regarding your experience. We truly appreciate you bringing this matter to our attention. We are delighted to assist in resolving this right away, and we are initiating the following remedy for you: ${inputs.resolution || "immediate technical sweep"}. We hope you have a pleasant rest of your day.\n\nBest regards,\nCustomer Delight Representative`;
+    } else if (toneLower === "firm") {
+      replyText = `Dear Client,\n\nWe have received your complaint regarding the ${inputs.issueType || "service"}. While we understand your concerns, we must state that our operations are governed strictly by our standard terms and conditions. As a final resolution, we are authorizing the following standard remedy: ${inputs.resolution || "immediate technical sweep"}. Please note that further modifications to this resolution will not be possible.\n\nSincerely,\nCorporate Compliance Team`;
+    } else if (toneLower === "apology") {
+      replyText = `Dear Client,\n\nPlease accept our deepest and most sincere apologies for the critical disturbance regarding our ${inputs.issueType || "service"}. We know we let you down, and we take full responsibility for this failure. To correct this immediately, we have authorized: ${inputs.resolution || "immediate technical sweep"}. We are taking training steps to prevent any repetition.\n\nSincerest regards,\nCustomer Success Supervisor`;
+    } else if (toneLower === "escalation") {
+      replyText = `Dear Client,\n\nWe have registered your complaint and classified it as a high-incident case under our corporate escalation policy. Your ticket has been dispatched directly to the Office of the Director. We are initiating high-level active remedies: ${inputs.resolution || "immediate technical sweep"}. A dedicated coordinator will follow up with you in 12 hours.\n\nSincerely,\nExecutive Incident Director`;
+    } else { // Professional
+      replyText = `Dear Client,\n\nThank you for detailing your experience with our ${inputs.issueType || "service"}. We have logged your feedback regarding the issue. To address this situation, we are initiating the following formal resolution steps: ${inputs.resolution || "immediate technical sweep"}. This case is being tracked to ensure all performance standards are met.\n\nSincerely,\nOperations Support Manager`;
+    }
+
     return {
-      empatheticReply: `Dear Client,\n\nWe hear you loud and clear. Let me begin with an explicit, unreserved apology for how your experience with our ${inputs.issueType || "service"} fell short. Your disappointment is completely valid. To address this immediately, we are initiating a dedicated remedy: ${inputs.resolution || "immediate technical sweep"}. Rest assured, we are tracking this closely to ensure you are made fully whole.\n\nSincerely,\nClient Experience Lead`,
-      apologyLine: `Please accept our sincere apologies for the clear distress and waste of your valuable time.`,
+      empatheticReply: replyText,
+      apologyLine: apologyLine,
       resolutionWording: `We are initiating high-priority logistics steps: ${inputs.resolution || "Full account sweep and active correction."}`,
       followUpLine: `Our support team has scheduled a manual progress review in 12 hours, and we will update you on the tracking status immediately.`
     };
@@ -1115,78 +1406,255 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, 
 
   if (moduleId === "universal_coach") {
     const rawText = inputs.textToAnalyze || "I want to complain about a refund delay for my stocks payout. You guys are useless.";
+    const textLower = rawText.toLowerCase();
 
     // Check if the input contains email markers to identify type
     const isDraft = rawText.includes("Dear") || rawText.includes("Hi") || rawText.includes("@") || rawText.includes("Sincerely") || rawText?.length > 150;
-    const isAngry = rawText.toLowerCase().includes("useless") || rawText.toLowerCase().includes("cheat") || rawText.toLowerCase().includes("worst") || rawText.toLowerCase().includes("fraud") || rawText.toLowerCase().includes("angry");
+    const isAngry = textLower.includes("useless") || textLower.includes("cheat") || textLower.includes("worst") || textLower.includes("fraud") || textLower.includes("angry");
 
-    // Standard high-quality compliant mocked versions (incorporates compliance sentences requested in guidelines)
     let inputType = isDraft ? "Agent Reply / Email Draft" : "Customer Query";
     let customerSentiment = isAngry ? "Angry" : "Frustrated";
     let priority = isAngry ? "High" : "Medium";
 
-    let variations = {
-      professional: {
-        tone: "Formal and business-like.",
-        bestUseCase: "When communicating with standard accounts or delivering regulatory updates.",
-        response: "Dear Customer,\n\nWe understand your concern regarding the outstanding payout request. Based on the information available, we verify that your transaction is processing within standard banking timelines. Please note that market-related investments are subject to risks. We request you to kindly wait for the regulatory settlement cycles to conclude."
-      },
-      empathetic: {
-        tone: "Show understanding and reassurance.",
-        bestUseCase: "When customers are experiencing critical issues or financial anxiety.",
-        response: "Dear Customer,\n\nWe understand your concern and completely validate how frustrating this delay is to your plans. Based on the information available, we want to reassure you that your funds are entirely secure. Our team will review the status from our end to ensure that bank integrations successfully clear your deposit. We request you to give us some time."
-      },
-      polite: {
-        tone: "Polite and highly courteous.",
-        bestUseCase: "For general positive relations and billing help.",
-        response: "Dear Customer,\n\nThank you so much for reaching out to us today. Based on the information available, we are pleased to confirm that our clearing desk is processing your payout at high priority. We request you to kindly let us know if you need any further clarifications. It is our pleasure to help you."
-      },
-      firm: {
-        tone: "Firm and expectation-setting.",
-        bestUseCase: "When clarifying strict margin policies or withdrawal conditions.",
-        response: "Dear Customer,\n\nWe request you to note that all account payouts must strictly align with exchange settlement guidelines and statutory rules. Based on the information available, this request cannot be bypassed, and funds are scheduled to release upon standard ledger clearance. Please note that market-related investments are subject to risk parameters. We request you to establish adequate margin levels as required."
-      },
-      apology: {
-        tone: "Apology and trust maintenance.",
-        bestUseCase: "When there is a definite banking integration bottleneck or technical error.",
-        response: "Dear Customer,\n\nPlease accept our sincere apologies for the unexpected delay in processing your stock payout transaction. We understand your concern and value the trust you place in us. Based on the information available, our technical support is resolving this banking bottleneck immediately. Rest assured, we are committed to making this right."
-      },
-      escalation: {
-        tone: "Suitable for Tier-2 escalation.",
-        bestUseCase: "When issues require senior supervisor intervention or technical audit.",
-        response: "Dear Customer,\n\nWe request you to note that we have escalated your stock payout concerns to our Risk Management and Clearing Supervisors. Based on the information available, our senior team will review your account settings and bank response logs. We request you to wait for an official status report from this premium ticketing desk shortly."
-      }
-    };
+    // Detect Topic context
+    let topicNameEn = "outstanding payout request";
+    let topicNameHi = "भुगतान निकासी अनुरोध";
+    let topicNameHinglish = "outstanding payout transaction request";
 
-    let emailAnalysis = {
-      professionalismScore: 88,
-      empathyScore: 78,
-      clarityScore: 85,
-      grammarScore: 92,
-      ownershipScore: 75,
-      overallScore: 84,
-      strengths: "Directly addresses the payout transaction while maintaining structural safety parameters.",
-      areasToImprove: "Tone in raw draft can sound defensive or abrupt. Use more positive action markers to avoid sounding robotic.",
-      suggestedBetterPhrases: "Replace dry wordings like 'We can't do anything about bank delays' with 'We are actively coordinating with our clearing partners to expedite this release.'"
-    };
+    let resolutionEn = "wait for the regulatory settlement cycles to conclude";
+    let resolutionHi = "मानक नियामक समाशोधन प्रक्रियाओं के पूरा होने की प्रतीक्षा करें";
+    let resolutionHinglish = "regulatory banking clearing cycles complete hone ki wait karte hain";
 
-    let angrySentimentHandling = {
-      customerEmotion: "Highly Frustrated / Dissatisfied",
-      urgencyLevel: "Critical - High Financial Priority",
-      riskLevel: "High - Account Churn At-Risk",
-      suggestedTone: "De-escalating, Highly Empathetic & Solution-driven",
-      deEscalationResponse: "We understand your concern, and I am personally taking charge of your ticket right now to guarantee this is fully handled.",
-      immediateActionStatement: "I have requested a manual clear operation with our clearing partner bank to bypass the standard automated delay.",
-      ownershipStatement: "I am taking direct ownership of this settlement process, and I will track it personally until the funds are successfully verified in your bank.",
-      nextStepStatement: "I will reach back out to you personally within 1 hour with the financial transaction ID."
-    };
+    if (textLower.includes("brokerage") || textLower.includes("charge") || textLower.includes("fee") || textLower.includes("cost") || textLower.includes("commission") || textLower.includes("gst")) {
+      topicNameEn = "applied ledger tariff and DP charges";
+      topicNameHi = "लागू लेज़र टैरिफ और डीपी शुल्क";
+      topicNameHinglish = "applied ledger fees and DP charges";
+      resolutionEn = "refer to our transparent tariff sheet and contract note";
+      resolutionHi = "हमारे पारदर्शी टैरिफ पोर्टल और संविदा नोट की जांच करें";
+      resolutionHinglish = "transparent tariff portals aur contract note verify karein";
+    } else if (textLower.includes("reject") || textLower.includes("order") || textLower.includes("margin") || textLower.includes("failed") || textLower.includes("square")) {
+      topicNameEn = "rejected order transaction or margin limits";
+      topicNameHi = "अस्वीकृत व्यापार ऑर्डर और मार्जिन सीमा";
+      topicNameHinglish = "rejected stock trades aur margin constraints";
+      resolutionEn = "establish adequate margin balances before resubmitting";
+      resolutionHi = "ट्रेड निष्पादन से पहले पर्याप्त सक्रिय मार्जिन संतुलन बनाए रखें";
+      resolutionHinglish = "standard trading credit margins and limit setup check karein";
+    } else if (textLower.includes("system") || textLower.includes("issue") || textLower.includes("glitch") || textLower.includes("technical") || textLower.includes("login") || textLower.includes("error") || textLower.includes("app") || textLower.includes("slow")) {
+      topicNameEn = "platform access connectivity latency or glitch";
+      topicNameHi = "प्लेटफ़ॉर्म लॉगिन और तकनीकी विलम्ब";
+      topicNameHinglish = "app logging and technical interface latency";
+      resolutionEn = "retry log in using our optimized high-availability routes";
+      resolutionHi = "हमारे अनुकूलित उच्च-विश्वसनीयता वैकल्पिक सर्वरों का प्रयोग करें";
+      resolutionHinglish = "backup high-speed mobile routers ya alternate terminal try karein";
+    } else if (textLower.includes("profile") || textLower.includes("kyc") || textLower.includes("document") || textLower.includes("verify") || textLower.includes("verification") || textLower.includes("onboard")) {
+      topicNameEn = "pending KYC profile verification status";
+      topicNameHi = "लंबित केवाईसी दस्तावेज सत्यापन";
+      topicNameHinglish = "pending profiles or KYC documents verification";
+      resolutionEn = "provide requested documents to finalize registry rules";
+      resolutionHi = "पंजीकरण नियमों को पूरा करने के लिए आवश्यक केवाईसी प्रमाण अपलोड करें";
+      resolutionHinglish = "necessary identity verification profiles setup upload karein";
+    }
 
-    let coachingTips = {
-      communicationImprovement: "Divide complex statutory rules into scannable points so clients feel secure, not overwhelmed.",
-      softSkillsImprovement: "Empathy is paramount. Under SEBI rules, maintain client compliance while validating active anxieties regarding assets.",
-      whatSeniorManagerWrites: "\"Based on the information available, we verify that safety audits are complete and we are actively triggering a direct bank wire clearance. Please note that market investments are subject to risk parameters.\"",
-      whatNotToWrite: "\"Your payout cannot be made because you haven't completed your profiles and it is not our fault.\""
-    };
+    let variations: any = {};
+    let emailAnalysis: any = {};
+    let angrySentimentHandling: any = {};
+    let coachingTips: any = {};
+
+    const selLang = language || "en";
+
+    if (selLang === "hi") {
+      variations = {
+        professional: {
+          tone: "औपचारिक और व्यावसायिक",
+          bestUseCase: "आधिकारिक संचार और मानक विनियामक अनुपालन के लिए।",
+          response: `प्रिय ग्राहक,\n\nहम आपके ${topicNameHi} के संबंध में आपकी चिंता को समझते हैं। उपलब्ध जानकारी के आधार पर, हम पुष्टि करना चाहते हैं कि हमारी टीम इस मामले की कड़ाई से समीक्षा कर रही है। कृपया ध्यान दें कि बाजार से संबंधित निवेश जोखिमों के अधीन हैं। हम आपसे अनुरोध करते हैं कि कृपया ${resolutionHi}।\n\nसादर,\nक्लाइंट सपोर्ट डेस्क`
+        },
+        empathetic: {
+          tone: "सहानुभूतिपूर्ण और आश्वस्तकारी",
+          bestUseCase: "जब ग्राहक तनाव या असंतोष में हो।",
+          response: `प्रिय ग्राहक,\n\nहम आपकी चिंता और ${topicNameHi} से होने वाली असुविधा को पूरी तरह से समझते हैं। उपलब्ध जानकारी के आधार पर, हम आपको आश्वस्त करना चाहते हैं कि आपकी संपत्तियां पूरी तरह सुरक्षित हैं। हमारी टीम विवरणों की पुनः जांच कर रही है। हम आपसे अनुरोध करते हैं कि कृपया हमें थोड़ा और समय दें।`
+        },
+        polite: {
+          tone: "विनम्र और सौम्य",
+          bestUseCase: "सकारात्मक संबंध बनाए रखने के लिए।",
+          response: `प्रिय ग्राहक,\n\nशीघ्र संपर्क के लिए धन्यवाद। उपलब्ध जानकारी के आधार पर, आपके ${topicNameHi} का समाधान सर्वोच्च प्राथमिकता पर किया जा रहा है। हम आपसे अनुरोध करते हैं कि कृपया किसी भी अन्य सहायता के लिए बेझिझक हमसे संपर्क करें। आपकी सेवा हमारा सौभाग्य है।`
+        },
+        firm: {
+          tone: "स्पष्ट और दृढ़",
+          bestUseCase: "विनियामक नीतियों और प्रक्रियाओं को स्पष्ट करने के लिए।",
+          response: `प्रिय ग्राहक,\n\nहम आपसे ध्यान देने का अनुरोध करते हैं कि सभी प्रक्रियाएं सेबी (SEBI) और विनियामक दिशानिर्देशों के अनुरूप संचालित होती हैं। उपलब्ध जानकारी के आधार पर, आपके ${topicNameHi} के लिए किसी भी नियम को दरकिनार नहीं किया जा सकता है। कृपया ध्यान दें कि बाजार निवेश जोखिमों के अधीन हैं, और हम आपसे ${resolutionHi} का अनुरोध करते हैं।`
+        },
+        apology: {
+          tone: "त्रुटि निवारण और क्षमा",
+          bestUseCase: "परिचालन में विलम्ब या त्रुटि होने पर।",
+          response: `प्रिय ग्राहक,\n\nकृपया आपके ${topicNameHi} में हुई अत्यधिक अनपेक्षित देरी के लिए हमारी गंभीर क्षमा स्वीकार करें। उपलब्ध जानकारी के आधार पर, हमारी तकनीकी टीम इस विसंगति को तत्काल दूर करने में जुटी है। हम इसे जल्द से जल्द सुधारने के लिए प्रतिबद्ध हैं।`
+        },
+        escalation: {
+          tone: "वरिष्ठ/नियामक स्तर पर अग्रेषण",
+          bestUseCase: "अतिरिक्त समीक्षा और विशेषज्ञ विश्लेषण की आवश्यकता होने पर।",
+          response: `प्रिय ग्राहक,\n\nहम सूचित करना चाहते हैं कि हमने आपके ${topicNameHi} विवरण को संबंधित नियामक पर्यवेक्षक डेस्क पर अग्रेषित कर दिया है। उपलब्ध जानकारी के आधार पर, हमारी विशेषज्ञ टीम गहन जांच कर रही है। हम आपसे अनुरोध करते हैं कि कृपया २ घंटों के भीतर आधिकारिक अपडेट की प्रतीक्षा करें।`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 80,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 78,
+        overallScore: 85,
+        strengths: "समस्या का सीधा समाधान और नियामक आवश्यकताओं का स्पष्ट समावेशन किया गया है।",
+        areasToImprove: "ड्राफ्ट को आनुपातिक रूप से और अधिक सहानुभूतिपूर्ण और मानवीय बनाया जा सकता है।",
+        suggestedBetterPhrases: `'वेट करो' या 'जल्दी नहीं होगा' के स्थान पर 'उपलब्ध जानकारी के आधार पर हम इस समाधान प्रक्रिया को सुगम बनाने के लिए आपसे प्रतीक्षा का अनुरोध करते हैं' का प्रयोग करें।`
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "अत्यधिक चिंतित / उग्र ग्राहक",
+        urgencyLevel: "क्रिटिकल सर्वोच्च प्राथमिकता",
+        riskLevel: "उच्च पलायन जोखिम",
+        suggestedTone: "तनाव कम करने वाला, अत्यंत सहानुभूतिपूर्ण और समाधान-उन्मुख",
+        deEscalationResponse: `हम आपके ${topicNameHi} को लेकर आपके रोष को पूरी तरह समझते हैं। मैं व्यक्तिगत रूप से इसकी जिम्मेदारी संभाल रहा हूँ ताकि संपूर्ण स्पष्टता स्थापित हो सके।`,
+        immediateActionStatement: `Maine standard clearing डेस्क को आपके dockets प्राथमिकता पर मैन्युअल क्लियर करने का विशेष अनुरोध किया है।`,
+        ownershipStatement: "मैं इस समस्या के पूर्ण निवारण का दायित्व लेता हूँ और जब तक समाधान पूर्ण नहीं होता, सीधे आपसे जुड़ा रहूँगा।",
+        nextStepStatement: "मैं निजी तौर पर आपके संपर्क नंबर अथवा पंजीकृत ईमेल पर १ घंटे में लेन-देन संदर्भ विवरण के साथ वापस आऊंगा।"
+      };
+
+      coachingTips = {
+        communicationImprovement: "विनियामकीय शर्तों को अत्यधिक लंबे पैराग्राफ के बजाय सरल सूचियों में दर्शाइए।",
+        softSkillsImprovement: "ग्राहक के वित्तीय प्रश्नों पर कंपनी की नियमावली उद्धृत करने से पहले उसके दर्द को आश्वस्त करें।",
+        whatSeniorManagerWrites: `"उपलब्ध जानकारी के आधार पर, हम पुष्टि करते हैं कि आपके ${topicNameHi} की गहन सुरक्षा जांच पूर्ण कर दी गई है। कृपया ध्यान दें कि बाजार निवेश जोखिम के अधीन हैं, और हम आपकी सहायता के लिए तैयार हैं।"`,
+        whatNotToWrite: `"नियमों के अनुसार इसे होने में समय लगेगा, हम इसमें कुछ नहीं कर सकते अतः बेवजह आपत्ति न करें।"`
+      };
+
+    } else if (selLang === "hinglish") {
+      variations = {
+        professional: {
+          tone: "Formal and Business-like tone",
+          bestUseCase: "Routine checks aur system regulatory status updates share karne ke liye.",
+          response: `Dear Customer,\n\nWe understand your concern pending ${topicNameHinglish} ke baare mein. Based on the information available, we verify kiya hai ki humari compliance operations team isko review kar rahi hai. Please note that market investments are subject to risk parameters. We request you to kindly ${resolutionHinglish}.\n\nWarm regards,\nClient Services Team`
+        },
+        empathetic: {
+          tone: "Empathetic and timing comfort tone",
+          bestUseCase: "Jab customer delay, cost updates ya failure se anxious feel kare.",
+          response: `Dear Customer,\n\nWe understand your concern aur hum completely realize karte hain ki ${topicNameHinglish} delay hone se aapko kitna inconvenience hua hai. Based on the information available, hum clarify karte hain ki aapke funds aur transaction details entirely safe hain database registers me. Hum absolute priority par action update karwa rahe hain.`
+        },
+        polite: {
+          tone: "Polite and highly support assistance guide",
+          bestUseCase: "General customer feedback and support help ke liye.",
+          response: `Dear Customer,\n\nThanks for reaching out today. Based on the information available, clears verification coordinates priority queue me process kiye ja rahe hain. We request you to kindly let us know features updates or requirements ke liye, hum help ke liye ready hain. Have a great day.`
+        },
+        firm: {
+          tone: "Firm and compliance parameters setter",
+          bestUseCase: "Strict margins aur regulatory non-negotiable rules details clear karne ke liye.",
+          response: `Dear Customer,\n\nWe request you to note ki sabhi transaction steps standard SEBI and exchange audit instructions guidelines ko satisfy karte hain. Based on the information available, is standard procedure ko bypass nahi kiya ja sakta. We request your cooperation standard verification policy rules ke sath.`
+        },
+        apology: {
+          tone: "Sincere Apology and instant server optimization",
+          bestUseCase: "App delay ya latency disturbance error parameters handle karne ke liye.",
+          response: `Dear Customer,\n\nPlatform latency ya dynamic delay ke chalte hone wali standard inconvenience ke liye we sincerely apologize. Based on the information available, humari technical and clearing desk details troubleshoot manually resolve karke aapko optimal experience restore karwayegi.`
+        },
+        escalation: {
+          tone: "Senior Technical Desk Elevation",
+          bestUseCase: "High priority challenges aur clearance disputes elevation support.",
+          response: `Dear Customer,\n\nWe request you to note ki ${topicNameHinglish} ticket ko humari Senior Auditor & Compliance Coordinator Desk ko forward kar diya gaya hai. Based on the information available, expert review will finalize transaction records. We request you to wait for dynamic status SMS or official mail next 2 hours me.`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 80,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 78,
+        overallScore: 85,
+        strengths: "Standard compliance requirements aur delay steps accurate specify kiye hain with professional boundaries.",
+        areasToImprove: "Draft sounds raw. Stiffer words directly exclude karein client's trust safety build karne ke liye.",
+        suggestedBetterPhrases: "Dry phrase 'We cannot override systems' ke jagah 'Based on the information available, our senior leaders are tracking your queries personally to expedite standard clearances' utilize karein."
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "Highly frustrated and angry client regarding transactional issues",
+        urgencyLevel: "Critical Operational Precedence",
+        riskLevel: "High risk - churn level high",
+        suggestedTone: "Calm, validating, highly solution and commitment-focused",
+        deEscalationResponse: `Hum completely understand karte hain ki is ${topicNameHinglish} issue ke chalte aap kitne angry aur disturbed hain, and I am personally following up with compliance.`,
+        immediateActionStatement: `Maine clears audit coordinators ko requests forward ki hai status files priority checking bypass overrides ke liye.`,
+        ownershipStatement: "I take direct responsibility is resolution ki aur track karunga status when safe updates clear na ho.",
+        nextStepStatement: "I will call or message you private 1 hour ke absolute limit me verified transaction transaction ID ke sath."
+      };
+
+      coachingTips = {
+        communicationImprovement: "Complex transaction errors and SEBI boundaries description ko clean bullet points style me show karein.",
+        softSkillsImprovement: "First validate client's financial anxiety before quoting rigid documents signed or online ledger rules.",
+        whatSeniorManagerWrites: `"Based on the information available, we verify standard compliance verification checks are completed. Please note that market-related investments are subject to risk parameters."`,
+        whatNotToWrite: `"Is process me dynamic timelines lagte hain so wait and don't make multiple complaints tickets on our board."`
+      };
+
+    } else {
+      // English (Default)
+      variations = {
+        professional: {
+          tone: "Formal and business-like.",
+          bestUseCase: "When communicating with standard accounts or delivering regulatory updates.",
+          response: `Dear Customer,\n\nWe understand your concern regarding the ${topicNameEn}. Based on the information available, we verify that your request is processing within standard banking and regulatory timelines. Please note that market-related investments are subject to risk parameters. We request you to kindly ${resolutionEn}.\n\nWarm regards,\nClient Operations Team`
+        },
+        empathetic: {
+          tone: "Show understanding and reassurance.",
+          bestUseCase: "When customers are experiencing critical issues or financial anxiety.",
+          response: `Dear Customer,\n\nWe understand your concern and completely validate how frustrating this delay to your ${topicNameEn} is to your plans. Based on the information available, we want to reassure you that your funds and portfolio assets are entirely secure. Our team will review the status from our end to ensure that bank integrations successfully clear your deposit. We request you to give us some time.`
+        },
+        polite: {
+          tone: "Polite and highly courteous.",
+          bestUseCase: "For general positive relations and billing help.",
+          response: `Dear Customer,\n\nThank you so much for reaching out to us today regarding your ${topicNameEn}. Based on the information available, we are pleased to confirm that our billing and clearing desk is processing your request at high priority. We request you to kindly let us know if you need any further clarifications. It is our pleasure to help you.`
+        },
+        firm: {
+          tone: "Firm and expectation-setting.",
+          bestUseCase: "When clarifying strict margin policies or withdrawal conditions.",
+          response: `Dear Customer,\n\nWe request you to note that all accounts and ${topicNameEn} steps must strictly align with exchange settlement guidelines and statutory rules. Based on the information available, this procedural review cannot be bypassed. Please note that market-related investments are subject to risk parameters. We request you to ${resolutionEn}.`
+        },
+        apology: {
+          tone: "Apology and trust maintenance.",
+          bestUseCase: "When there is a definite banking integration bottleneck or technical error.",
+          response: `Dear Customer,\n\nPlease accept our sincere apologies for the unexpected friction or delay concerning your ${topicNameEn}. We understand your concern and value the trust you place in us. Based on the information available, our tech supervisors and billing support are resolving this bottleneck immediately. Rest assured, we are committed to making this right.`
+        },
+        escalation: {
+          tone: "Suitable for Tier-2 escalation.",
+          bestUseCase: "When issues require senior supervisor intervention or technical audit.",
+          response: `Dear Customer,\n\nWe request you to note that we have escalated your ${topicNameEn} concerns to our Risk Management and Clearing Supervisors. Based on the information available, our senior team will review your account settings and bank response logs. We request you to wait for an official status report from this premium ticketing desk shortly.`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 78,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 75,
+        overallScore: 84,
+        strengths: `Directly addresses the ${topicNameEn} issue while maintaining structural safety parameters in accordance with compliance.`,
+        areasToImprove: "Tone in raw draft can sound defensive or abrupt. Use more positive action markers to avoid sounding robotic.",
+        suggestedBetterPhrases: `Replace dry wordings like 'We can't do anything about this' with 'We are actively coordinating with our clearing partners to expedite your ${topicNameEn} resolution.'`
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "Highly Frustrated / Dissatisfied",
+        urgencyLevel: "Critical - High Financial Priority",
+        riskLevel: "High - Account Churn At-Risk",
+        suggestedTone: "De-escalating, Highly Empathetic & Solution-driven",
+        deEscalationResponse: `We understand your concern, and I am personally taking charge of your ticket right now to guarantee your ${topicNameEn} is fully handled.`,
+        immediateActionStatement: `I have requested a manual dispatch/clear operation to fast-track your folder and bypass the standard automated delay.`,
+        ownershipStatement: "I am taking direct ownership of this resolution process, and I will track it personally until any discrepancies are successfully verified in your dashboard.",
+        nextStepStatement: "I will reach back out to you personally within 1 hour with the financial transaction ID."
+      };
+
+      coachingTips = {
+        communicationImprovement: "Divide complex statutory rules into scannable points so clients feel secure, not overwhelmed.",
+        softSkillsImprovement: "Empathy is paramount. Under regulatory standards, maintain client compliance while validating active anxieties regarding assets.",
+        whatSeniorManagerWrites: `"Based on the information available, we verify that safety audits are complete and we are actively triggering a direct clearance. Please note that market investments are subject to risk parameters."`,
+        whatNotToWrite: `"Your request cannot be completed because you haven't completed your profiles and it is not our fault."`
+      };
+    }
 
     return {
       inputType,

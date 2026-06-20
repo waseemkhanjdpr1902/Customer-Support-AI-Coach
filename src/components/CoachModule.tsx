@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   Sparkles, Copy, Check, Save, RotateCcw, 
   ArrowRight, ShieldAlert, BadgeAlert, HelpCircle, 
-  Smile, Award, FileText, ChevronRight, UserCog
+  Smile, Award, FileText, ChevronRight, UserCog,
+  Search, CheckCircle, XCircle, Info, ShieldCheck
 } from 'lucide-react';
 import { ModuleId, User } from '../types';
 import { apiClient } from '../apiClient';
@@ -12,6 +13,73 @@ interface CoachModuleProps {
   currentUser: User;
   onSaveSuccess?: () => void;
 }
+
+const PHRASES_DATA = [
+  {
+    id: 'phrase-1',
+    category: 'Payouts & Refunds',
+    prohibited: "Your payout of Rs 50,000 is stuck in standard processing. Just wait for some time.",
+    compliant: "Aapka Rs 50,000 withdrawal request registered ho chuka hai. Standard banking settlement cycle ke tehet hum isse complete trace kar rahe hain aur ye agle 2 hours me bank ledger me update ho jayega.",
+    sebiRule: "SEBI Settlement of Client Funds Mandate (Section 4.2)",
+    explanation: "Avoid telling clients to 'just wait' or calling transactions 'stuck'. Always provide specific operational settlement periods and state that tracing/verification is in progress under standard bank policies."
+  },
+  {
+    id: 'phrase-2',
+    category: 'Payouts & Refunds',
+    prohibited: "Don't worry, we guarantee 100% refund of delayed funds charges.",
+    compliant: "Hum delayed transactions review guidelines block check kar rahe hain. Standard tariff directives and SEBI regulatory disclosures ke tehet hum market profit ya charge refunds ki financial guarantee promise nahi karte.",
+    sebiRule: "SEBI circular on Prohibition of Guaranteed Returns (Clause 6)",
+    explanation: "Strictly prohibit using words like 'guarantee' or promising certain refunds for delayed transactions. Always mention tariff disclosures and regulatory checks."
+  },
+  {
+    id: 'phrase-3',
+    category: 'KYC & Demat',
+    prohibited: "Your KYC verification is rejected. You entered wrong details. Modify it or we will close description.",
+    compliant: "Inconvenience ke liye sincere apologies. Aapke KYC documents me registered name discrepancy detect hui hai. Regulatory verification requirements ke tehet, aap in details ko simple online portal se modify kar sakte hain taaki approval instantly setup ho sake.",
+    sebiRule: "SEBI KRA (KYC Registration Agency) Regulations, 2011",
+    explanation: "Avoid aggressive rejection terminology. Express apology for the verification checkpoint, outline the specific mismatches, and guide the investor helper link step-by-step."
+  },
+  {
+    id: 'phrase-4',
+    category: 'KYC & Demat',
+    prohibited: "We will skip KRA document verification to open your account fast.",
+    compliant: "Standard financial safety rules and KRA norms ke compliance me account start karne se pehle pan and offline verification mandatory hai. Is audit process me normally 12 working hours lagte hain.",
+    sebiRule: "PMLA Act Section 12 & SEBI anti-money laundering circulars",
+    explanation: "Never suggest or write that regulatory checks, paperwork, or document uploads can be skipped, bypassed, or falsified to save time."
+  },
+  {
+    id: 'phrase-5',
+    category: 'Margin & RMS',
+    prohibited: "Our Risk Management Team automatically closed/squared-off your open trade because you had zero margin. We are not responsible.",
+    compliant: "Exchange margin shortfall guidelines ke rule compliance me Risk Management Desk (RMS) ko automatic action ke tehet positions wind-up karni padti hain. Hum position protection ke liye ledger margin check karne ki criteria suggest karte hain.",
+    sebiRule: "SEBI Peak Margin & Automatic Risk Square-Off Mandate",
+    explanation: "Avoid telling the user 'we are not responsible' or using defensive tones. Formulate it as standard automatic risk management framework (RMS) triggers linked strictly to SEBI Peak Margin guidelines."
+  },
+  {
+    id: 'phrase-6',
+    category: 'Margin & RMS',
+    prohibited: "Take 10x high leverage directly from our premium desk and trade risk-free.",
+    compliant: "Derivative trading peak leverage criteria strictly Exchange and SEBI MTF (Margin Trading Facility) standard requirements se governed hain. Standard disclosure: derivatives investments are subject to capital risk factors.",
+    sebiRule: "SEBI Margin Trading Facility Directive 2022",
+    explanation: "Never claim leverage is 'risk-free' or state arbitrary, unapproved multipliers. Frame margin allocations under the legal MTF framework."
+  },
+  {
+    id: 'phrase-7',
+    category: 'Charges & Brokerage',
+    prohibited: "This transaction charge was deducted by the system. We can't refund it, go complain to SEBI or web portal.",
+    compliant: "Aapke ledger me charge rate list stamp duty aur transaction statutory fees ke standard tariff plans ke rules ke accordance applied hain. Agar is statement breakdown me issue lag raha hai, toh complaint desk manual audit setup kar sakti hai.",
+    sebiRule: "SEBI Code of Conduct for Stock Brokers & Transparency circulars",
+    explanation: "Never invite angry clients to 'complain to SEBI' or dismiss billing questions. Offer a formal compliance manual ledger audit if a calculation dispute exists."
+  },
+  {
+    id: 'phrase-8',
+    category: 'Charges & Brokerage',
+    prohibited: "Our system has hidden annual charges that we deduct dynamically.",
+    compliant: "Hum standard transparent pricing models implement karte hain. Aap complete annual criteria sheet, Demat maintenance rules and tariff details transparency card sheet standard terms check kar sakte hain, isme koi hidden terms nahi hain.",
+    sebiRule: "SEBI Guideline on Transparency and Disclosure of Brokerage Charges",
+    explanation: "Ensure the active agent response stresses absolute transparency and direct reference to standard, approved tariff sheets."
+  }
+];
 
 const TONES = [
   'Professional',
@@ -62,6 +130,370 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [selectedVariation, setSelectedVariation] = useState<string>('professional');
 
+  // Phrase Library States
+  const [phraseSearch, setPhraseSearch] = useState('');
+  const [selectedPhraseCategory, setSelectedPhraseCategory] = useState('All');
+  const [sandboxInput, setSandboxInput] = useState('');
+  const [sandboxEvaluation, setSandboxEvaluation] = useState<{
+    compliancyScore: number;
+    issuesFound: string[];
+    suggestedCategory: string;
+    suggestion: string;
+  } | null>(null);
+
+  const evaluateSandbox = () => {
+    const text = sandboxInput.toLowerCase();
+    if (!text.trim()) {
+      setSandboxEvaluation(null);
+      return;
+    }
+
+    let compliancyScore = 10;
+    const issuesFound: string[] = [];
+    let suggestedCategory = 'Payouts & Refunds';
+    let suggestion = '';
+
+    if (text.includes('wait') || text.includes('stuck') || text.includes('some time')) {
+      compliancyScore -= 3;
+      issuesFound.push('❌ Used unapproved delay language ("wait", "stuck"). SEBI guidelines prohibit telling clients to wait without specifying standard depository turnaround times.');
+      suggestedCategory = 'Payouts & Refunds';
+      suggestion = 'Aapka withdrawal request safely registered ho chuka hai. Depository set-up timeline ke mutabik funds 2 working hours me bank ledger account me transfer ho jayenge.';
+    }
+
+    if (text.includes('guarantee') || text.includes('100%') || text.includes('profit') || text.includes('return')) {
+      compliancyScore -= 4;
+      issuesFound.push('🚨 COMPLIANCE BREACH: Guaranteed returns/refunds promise. SEBI Code of Conduct strictly prevents stock brokers from guaranteeing capital returns or refunds for market issues.');
+      suggestedCategory = 'Payouts & Refunds';
+      suggestion = 'Brokerage charges guidelines as per regulatory charts strictly follow fixed percentages. Hum absolute return/profit ya guaranteed refund promise nahi karte.';
+    }
+
+    if (text.includes('kra') || text.includes('skip') || text.includes('bypass') || text.includes('without documents')) {
+      compliancyScore -= 4;
+      issuesFound.push('🚨 COMPLIANCE BREACH: Attempting/suggesting to bypass document verification. Account onboarding and KRA digital verification are strictly mandated by the Prevention of Money Laundering Act (PMLA).');
+      suggestedCategory = 'KYC & Demat';
+      suggestion = 'Standard financial safety rules and KRA norms ke compliance me account start karne se pehle pan and offline verification mandatory hai. Is audit process me normally 12 working hours lagte hain.';
+    }
+
+    if (text.includes('closed') || text.includes('rms') || text.includes('squared-off') || text.includes('margin') || text.includes('collateral')) {
+      if (text.includes('our fault') || text.includes('not our fault') || text.includes('responsibility') || text.includes('not responsible')) {
+        compliancyScore -= 2;
+        issuesFound.push('⚠️ Defensive brand language: Denied platform liability or responsibility. Frame liquidation actions purely around exchange margin criteria squared-off by system.');
+      }
+      suggestedCategory = 'Margin & RMS';
+      suggestion = 'Exchange margin shortfall guidelines ke rule compliance me Risk Management Desk (RMS) ko automatic action ke tehet positions wind-up karni padti hain. Hum position protection ke liye ledger margin check karne ki criteria suggest karte.';
+    }
+
+    if (text.includes('complain') || text.includes('sebi') || text.includes('portal')) {
+      compliancyScore -= 2;
+      issuesFound.push('⚠️ Deflection language. Strictly avoid inviting upset clients to check complaint links or go direct to SEBI. Instead, direct them to an internal senior audit ledger check.');
+      suggestedCategory = 'Charges & Brokerage';
+      suggestion = 'Aapke ledger me charge rate list stamp duty aur transaction statutory fees ke standard tariff plans ke rules ke accordance applied hain. Agar calculations me confusion hai, toh compliance team active manual audit start karegi.';
+    }
+
+    if (compliancyScore === 10) {
+      if (text.length < 15) {
+        compliancyScore = 8;
+        issuesFound.push('ℹ️ Statement is too brief to convey adequate empathy. Provide specific regulatory background descriptions.');
+      } else {
+        issuesFound.push('✅ No severe compliance keywords flagged! Clear, objective tone identified.');
+      }
+      suggestion = 'Excellent! Your statement matches compliant criteria. Keep details transparent, state standard policies, and refer to verified schedules.';
+    }
+
+    setSandboxEvaluation({
+      compliancyScore,
+      issuesFound,
+      suggestedCategory,
+      suggestion
+    });
+  };
+
+  const renderPhraseLibrary = () => {
+    // Filter phrases
+    const filteredPhrases = PHRASES_DATA.filter(p => {
+      const matchesSearch = p.prohibited.toLowerCase().includes(phraseSearch.toLowerCase()) || 
+                            p.compliant.toLowerCase().includes(phraseSearch.toLowerCase()) || 
+                            p.explanation.toLowerCase().includes(phraseSearch.toLowerCase()) ||
+                            p.sebiRule.toLowerCase().includes(phraseSearch.toLowerCase());
+      const matchesCategory = selectedPhraseCategory === 'All' || p.category === selectedPhraseCategory;
+      return matchesSearch && matchesCategory;
+    });
+
+    return (
+      <div className="bg-white rounded-sm border border-slate-205 p-6 space-y-6 text-left animate-fade-in shadow-xs lg:col-span-12 w-full">
+        {/* Banner */}
+        <div id="phrase-library-intro" className="flex flex-col md:flex-row justify-between gap-4 border-b border-slate-100 pb-5">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-sm text-[10px] uppercase tracking-wider font-bold bg-indigo-50 text-indigo-700 border border-indigo-150">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              SEBI & Depository Compliant Registry
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">Active Customer Support Phrase Card Index</h3>
+            <p className="text-xs text-slate-500 max-w-2xl">
+              An interactive database of prohibited financial phrasing and standard-approved regulatory alternatives. Directly copy vetted answers to eliminate micro-aggressions, guarantee compliance, and reduce SEBI audit logs.
+            </p>
+          </div>
+          
+          {/* Regulatory Quick Counter */}
+          <div className="flex gap-3 bg-slate-50 border border-slate-200 p-3 rounded-sm items-center self-start shrink-0">
+            <div className="text-center px-1">
+              <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest font-mono">Approved</span>
+              <strong className="text-sm font-extrabold text-emerald-600 block">v1.2 Standard</strong>
+            </div>
+            <div className="h-6 w-px bg-slate-200"></div>
+            <div className="text-center px-1">
+              <span className="block text-[8px] font-bold text-slate-400 uppercase tracking-widest font-mono">Core Count</span>
+              <strong className="text-sm font-extrabold text-slate-900 block">{PHRASES_DATA.length} Verified</strong>
+            </div>
+          </div>
+        </div>
+
+        {/* Sandbox compliance workspace */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          {/* Phrase Database Section */}
+          <div className="lg:col-span-8 space-y-4">
+            {/* Search & Category Header */}
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
+                <input 
+                  type="text"
+                  placeholder="Search broker rules, keywords, SEBI circular codes (e.g., 'margin', 'KYC', 'KRA')..."
+                  value={phraseSearch}
+                  onChange={(e) => setPhraseSearch(e.target.value)}
+                  className="w-full text-xs pl-9 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white"
+                />
+                {phraseSearch && (
+                  <button 
+                    onClick={() => setPhraseSearch('')}
+                    className="text-slate-400 hover:text-slate-600 text-xs absolute right-3 top-3 font-semibold font-mono"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {/* Category selector pills */}
+              <div className="flex flex-wrap gap-1.5 border-b border-slate-100 pb-2">
+                {['All', 'Payouts & Refunds', 'KYC & Demat', 'Margin & RMS', 'Charges & Brokerage'].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedPhraseCategory(cat)}
+                    className={`px-3 py-1.5 rounded-sm text-xs font-semibold cursor-pointer transition ${
+                      selectedPhraseCategory === cat 
+                        ? 'bg-indigo-600 text-white shadow-xs' 
+                        : 'bg-slate-50 text-slate-650 hover:bg-slate-100'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Phrase items list */}
+            <div className="space-y-4 max-h-[580px] overflow-y-auto pr-1">
+              {filteredPhrases.length === 0 ? (
+                <div className="text-center py-10 border border-dashed border-slate-200 bg-slate-50 rounded-sm">
+                  <p className="text-xs text-slate-500 font-medium">No vetting results found for current query. Refine your search inputs.</p>
+                </div>
+              ) : (
+                filteredPhrases.map(item => (
+                  <div key={item.id} className="border border-slate-200 rounded-sm overflow-hidden bg-white shadow-xs hover:border-slate-300 transition flex flex-col">
+                    {/* Item header */}
+                    <div className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap justify-between items-center gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-sm bg-indigo-50 border border-indigo-100 text-indigo-700 font-sans uppercase">
+                          {item.category}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-400 font-mono">
+                          {item.sebiRule}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(item.compliant, item.id)}
+                        className={`text-[10px] font-bold px-2.5 py-1 rounded-sm border transition flex items-center gap-1 cursor-pointer select-none ${
+                          copiedField === item.id 
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {copiedField === item.id ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-500" />
+                            Copied alternative!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3 text-slate-500" />
+                            Copy Approved Text
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Prohibited vs Compliant blocks */}
+                    <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3.5 border-b border-slate-100">
+                      {/* Prohibited / Avoid */}
+                      <div className="space-y-1.5 p-3 bg-red-50/50 border border-red-100 rounded-sm">
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-red-600 uppercase tracking-wider font-mono">
+                          <XCircle className="w-3.5 h-3.5 text-red-500" />
+                          Prohibited Phrase
+                        </div>
+                        <p className="text-[11px] text-red-955 italic line-through font-normal leading-relaxed">
+                          "{item.prohibited}"
+                        </p>
+                      </div>
+
+                      {/* Compliant / Use */}
+                      <div className="space-y-1.5 p-3 bg-emerald-50/50 border border-emerald-100 rounded-sm">
+                        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider font-mono">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
+                          SEBI-Compliant Standard
+                        </div>
+                        <p className="text-[11.5px] text-emerald-950 font-medium leading-relaxed font-sans">
+                          "{item.compliant}"
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Explanatory notes */}
+                    <div className="px-4 py-2.5 bg-slate-50/50 text-[11px] text-slate-500 flex gap-2 items-start leading-relaxed">
+                      <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <strong className="text-slate-800 text-[10px] uppercase font-bold tracking-wider font-mono">Why this alternative works:</strong>
+                        <p className="text-slate-650 mt-0.5">{item.explanation}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Interactive Compliance Sidebar */}
+          <div className="lg:col-span-4 space-y-4">
+            {/* Interactive Sandbox Evaluator */}
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-sm space-y-3 shadow-xs">
+              <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                <h4 className="font-bold text-slate-900 tracking-tight text-xs">Verify Phrase Compliancy</h4>
+              </div>
+
+              <div className="space-y-2 text-left">
+                <p className="text-[11px] text-slate-500 leading-normal font-sans">
+                  Write or paste your planned chat response to check for compliance failures prior to transmitting to an active broker customer.
+                </p>
+                <textarea 
+                  rows={4}
+                  placeholder="e.g., 'Just wait for some time. Our RMS team closed it due to margin shortcut...'"
+                  value={sandboxInput}
+                  onChange={(e) => setSandboxInput(e.target.value)}
+                  className="w-full text-xs p-2 bg-white border border-slate-205 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none font-sans"
+                />
+                <div className="flex justify-between items-center gap-2 pt-1">
+                  <button
+                    onClick={() => {
+                      setSandboxInput('');
+                      setSandboxEvaluation(null);
+                    }}
+                    className="text-[10px] text-slate-500 hover:text-slate-700 font-bold font-mono tracking-wider cursor-pointer"
+                  >
+                    Reset Check
+                  </button>
+                  <button
+                    onClick={evaluateSandbox}
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded-sm text-xs font-extrabold hover:bg-blue-700 transition flex items-center gap-1 cursor-pointer"
+                  >
+                    Test Draft Compliancy
+                  </button>
+                </div>
+              </div>
+
+              {/* Sandbox Evaluation Assessment Output */}
+              {sandboxEvaluation && (
+                <div className="space-y-3 mt-3 pt-3 border-t border-slate-200 animate-fade-in text-left">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-slate-400 id-sandbox-evaluation-score uppercase tracking-widest font-mono">Compliancy Score</span>
+                    <div className="flex items-baseline gap-0.5">
+                      <strong className={`text-sm font-extrabold ${
+                        sandboxEvaluation.compliancyScore >= 8 ? 'text-emerald-600' :
+                        sandboxEvaluation.compliancyScore >= 5 ? 'text-amber-600' :
+                        'text-rose-600'
+                      }`}>
+                        {sandboxEvaluation.compliancyScore}
+                      </strong>
+                      <span className="text-[10px] text-slate-400">/ 10</span>
+                    </div>
+                  </div>
+
+                  {/* Bulleted checklist updates */}
+                  <div className="space-y-1.5 max-h-[140px] overflow-y-auto pr-1">
+                    {sandboxEvaluation.issuesFound.map((issue, idx) => (
+                      <p key={idx} className="text-[10px] leading-relaxed text-slate-600 font-medium">
+                        {issue}
+                      </p>
+                    ))}
+                  </div>
+
+                  {/* Dynamic suggestion recommendation */}
+                  {sandboxEvaluation.compliancyScore < 10 && (
+                    <div className="p-2.5 bg-indigo-50 border border-indigo-100 rounded-sm space-y-1">
+                      <span className="block text-[8px] font-bold text-indigo-700 uppercase tracking-widest font-mono">
+                        Recommend Library Replacement ({sandboxEvaluation.suggestedCategory})
+                      </span>
+                      <p className="text-[10.5px] italic text-indigo-950 font-normal leading-relaxed">
+                        "{sandboxEvaluation.suggestion}"
+                      </p>
+                      <button
+                        onClick={() => handleCopy(sandboxEvaluation.suggestion, 'sandbox-copy')}
+                        className="text-[9px] font-bold text-blue-700 hover:text-blue-800 underline block pt-0.5"
+                      >
+                        {copiedField === 'sandbox-copy' ? 'Copied alternative!' : 'Copy to Clipboard'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* SEBI Code of Conduct Core Checklist */}
+            <div className="bg-white border border-slate-200 p-4 rounded-sm space-y-3 text-left shadow-xs">
+              <div className="flex items-center gap-1.5 pb-2 border-b border-slate-105">
+                <HelpCircle className="w-4 h-4 text-indigo-600" />
+                <h4 className="font-bold text-slate-900 tracking-tight text-xs">Broker Compliance Guardrails</h4>
+              </div>
+              
+              <ul className="space-y-2.5 text-[11px] leading-relaxed">
+                <li className="flex gap-2 items-start">
+                  <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
+                  <div>
+                    <strong className="text-slate-800 font-semibold block text-[10.5px]">Direct Tariff Citations Only</strong>
+                    <span className="text-slate-500 font-normal">Billing details must reference Standard Rate List to avoid non-disclosure penalties.</span>
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
+                  <div>
+                    <strong className="text-slate-800 font-semibold block text-[10.5px]">Emphasize Automatic RMS Triggers</strong>
+                    <span className="text-slate-500 font-normal">RMS square-offs must be declared as system automated limits to maintain regulatory objectivity.</span>
+                  </div>
+                </li>
+                <li className="flex gap-2 items-start">
+                  <span className="text-emerald-500 font-bold shrink-0 mt-0.5">✓</span>
+                  <div>
+                    <strong className="text-slate-800 font-semibold block text-[10.5px]">Clear Settled Schedules</strong>
+                    <span className="text-slate-500 font-normal">Explain payout cycles using exact hour estimations, stating standard clearing hours strictly.</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const handleInputChange = (field: string, val: string) => {
     setInputs(prev => ({ ...prev, [field]: val }));
     setIsSaved(false); // Reset saved badge when inputs change
@@ -76,7 +508,14 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
   // Pre-fill sample values for the agent to learn quickly
   const loadSampleData = () => {
     setIsSaved(false);
-    if (moduleId === 'email_improvement') {
+    if (moduleId === 'email_coach') {
+      setInputs(prev => ({
+        ...prev,
+        emailInputText: "My Demat payout of Rs 50,000 is delayed for 3 days. This is worst service, give me double return or I complain to SEBI and write online fraud!",
+        emailTask: "Write Apology Email"
+      }));
+      setTone('Empathetic');
+    } else if (moduleId === 'email_improvement') {
       setInputs(prev => ({
         ...prev,
         originalEmail: "I know you are mad but we can't refund your money because our policy says 14 days and you bought it 20 days ago. Sorry but rules are rules.",
@@ -86,9 +525,9 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     } else if (moduleId === 'complaint_handling') {
       setInputs(prev => ({
         ...prev,
-        complaint: "Your delivery driver literally threw the fragile package at my door, cracking the glass screen inside! This is completely unacceptable!",
-        issueType: "Damaged delivery by driver",
-        resolution: "Ship complimentary replacement immediately and extend $15 credit."
+        complaint: "Your executive delayed my Demat KYC verification for over a week! I missed trading on a major market movement and lost potential profits. Setup my account now or I will raise a complaint with SEBI!",
+        issueType: "Demat KYC verification delay",
+        resolution: "Expedite Demat validation by manual review team within 2 hours, waive first year annual maintenance charges."
       }));
       setTone('Apology');
     } else if (moduleId === 'call_script') {
@@ -102,7 +541,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     } else if (moduleId === 'soft_skills') {
       setInputs(prev => ({
         ...prev,
-        agentResponse: "Your withdrawal is under process. Charges are applicable as per policy. Just wait for some time."
+        agentResponse: "Your Demat trade was automatically closed by our RMS team due to margin shortfall. Your payout of Rs 50,000 is on hold because of KYC discrepancies. If you don't like it you can complain to SEBI."
       }));
       setTone('Polite');
     } else if (moduleId === 'escalation') {
@@ -117,9 +556,9 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
     } else if (moduleId === 'email_writer') {
       setInputs(prev => ({
         ...prev,
-        purpose: "Welcome new enterprise client and request API onboarding session",
-        recipientType: "CTO and Engineering Leads",
-        keyPoints: "Welcome package attached; Scheduling link included; Need safe workspace IP whitelist ranges."
+        purpose: "Resolve delayed Demat bank account linking and refund standard processing fee",
+        recipientType: "Active Stock Market Investor",
+        keyPoints: "Verification completed manually; Bank linking active within 2 hours; Fee of Rs 500 credited back to your trading ledger; Apology for delay."
       }));
       setTone('Professional');
     } else if (moduleId === 'universal_coach') {
@@ -220,7 +659,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
       <div className="bg-white p-4 rounded-sm border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3 text-left">
         <div>
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-sm text-[9px] font-bold bg-blue-50 text-blue-700 uppercase tracking-widest border border-blue-105 font-mono mb-1.5">
-            Module {getModuleNumber(moduleId)} of 6
+            Module {getModuleNumber(moduleId)} of 3
           </span>
           <h2 className="text-sm font-bold text-slate-900 tracking-tight">{getModuleTitle(moduleId)}</h2>
           <p className="text-xs text-slate-500 mt-0.5">{getModuleDescription(moduleId)}</p>
@@ -245,13 +684,49 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        {/* Left Column: Form Inputs & Guided Explanations */}
+      {moduleId === 'soft_skills' ? (
+        renderPhraseLibrary()
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+          {/* Left Column: Form Inputs & Guided Explanations */}
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white p-4 rounded-sm border border-slate-200 shadow-xs space-y-4">
           <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-100 block text-left">Coaching inputs</h3>
           
           {/* Dynamic input render based on active module ID */}
+          {moduleId === 'email_coach' && (
+            <div className="space-y-3.5 text-left animate-fade-in">
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Select Email Task / Purpose</label>
+                <select 
+                  id="inp-email-coach-task"
+                  value={inputs.emailTask || 'Improve Existing Email'}
+                  onChange={(e) => handleInputChange('emailTask', e.target.value)}
+                  className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white cursor-pointer"
+                >
+                  <option value="Improve Existing Email">Improve Existing Email</option>
+                  <option value="Write New Customer Reply">Write New Customer Reply</option>
+                  <option value="Write Internal Escalation Email">Write Internal Escalation Email</option>
+                  <option value="Write Apology Email">Write Apology Email</option>
+                  <option value="Make Email More Professional">Make Email More Professional</option>
+                  <option value="Make Email Short & Clear">Make Email Short & Clear</option>
+                  <option value="Senior Management Version">Senior Management Version</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-500 mb-1">Raw Input / Core Details</label>
+                <textarea 
+                  id="inp-email-coach-input"
+                  rows={8}
+                  placeholder="Paste customer query, email draft, complaint details, or escalation requirement here…"
+                  value={inputs.emailInputText || ''}
+                  onChange={(e) => handleInputChange('emailInputText', e.target.value)}
+                  className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition resize-none leading-relaxed font-sans"
+                />
+              </div>
+            </div>
+          )}
+
           {moduleId === 'email_improvement' && (
             <div className="space-y-3.5 text-left">
               <div>
@@ -611,6 +1086,59 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
 
               {/* Dynamic Field Output Render */}
               <div className="p-4 space-y-4 flex-grow text-left">
+                {/* 0. AI Email Coach Output Fields */}
+                {moduleId === 'email_coach' && (
+                  <div className="space-y-4 max-h-[580px] overflow-y-auto pr-1 animate-fade-in">
+                    {/* Metadata & Status Badges */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pb-2.5 border-b border-slate-100 items-center">
+                      <div className="px-2 py-1.5 rounded bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-semibold flex flex-col">
+                        <span className="text-[9px] text-slate-400 uppercase font-mono">Class</span>
+                        <strong className="text-slate-900 mt-0.5">{output.detectedInputType || "Customer Query"}</strong>
+                      </div>
+                      
+                      <div className={`px-2 py-1.5 rounded text-[11px] font-semibold flex flex-col border ${
+                        output.customerSentiment?.toLowerCase() === 'angry' ? 'bg-red-50 text-red-700 border-red-200' :
+                        output.customerSentiment?.toLowerCase() === 'frustrated' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        <span className="text-[9px] opacity-70 uppercase font-mono">Sentiment</span>
+                        <strong className="mt-0.5">{output.customerSentiment || "Frustrated"}</strong>
+                      </div>
+
+                      <div className={`px-2 py-1.5 rounded text-[11px] font-semibold flex flex-col border ${
+                        output.priorityLevel?.toLowerCase() === 'high' ? 'bg-rose-50 text-rose-700 border-rose-200 animate-pulse' :
+                        output.priorityLevel?.toLowerCase() === 'medium' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                        'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}>
+                        <span className="text-[9px] opacity-70 uppercase font-mono">Priority</span>
+                        <strong className="mt-0.5">{output.priorityLevel || "Medium"}</strong>
+                      </div>
+
+                      <div className="px-2 py-1.5 rounded bg-blue-50 border border-blue-100 text-blue-700 text-[11px] flex flex-col">
+                        <span className="text-[9px] text-blue-400 uppercase font-mono">Recommended Tone</span>
+                        <strong className="mt-0.5">{output.recommendedTone || "Professional"}</strong>
+                      </div>
+                    </div>
+
+                    {/* Main Email outputs */}
+                    {renderOutputBlock("subjectLine", "Subject Line", output.subjectLine)}
+                    {renderOutputBlock("finalEmailDraft", "Final Email Draft", output.finalEmailDraft, true)}
+
+                    {/* Staggered Variants */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {renderOutputBlock("shortVersion", "Short Version", output.shortVersion, true)}
+                      {renderOutputBlock("moreEmpatheticVersion", "More Empathetic Version", output.moreEmpatheticVersion, true)}
+                      {renderOutputBlock("moreProfessionalVersion", "More Professional Version", output.moreProfessionalVersion, true)}
+                    </div>
+
+                    {/* Coaching Explanations */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      {renderOutputBlock("keyImprovementsMade", "Key Improvements Made", output.keyImprovementsMade)}
+                      {renderOutputBlock("wordsPhrasesToAvoid", "Words/Phrases to Avoid", output.wordsPhrasesToAvoid)}
+                    </div>
+                  </div>
+                )}
+
                 {/* 1. Email Improvement Output Fields */}
                 {moduleId === 'email_improvement' && (
                   <div className="space-y-3.5">
@@ -975,6 +1503,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
           )}
         </div>
       </div>
+      )}
     </div>
   );
 
@@ -1119,6 +1648,9 @@ function getScoreBg(score: number): string {
 }
 
 function isInputEmpty(moduleId: ModuleId, inputs: Record<string, string>): boolean {
+  if (moduleId === 'email_coach') {
+    return !inputs.emailInputText?.trim();
+  }
   if (moduleId === 'email_improvement') {
     return !inputs.originalEmail?.trim() || !inputs.issueType?.trim();
   }
@@ -1144,15 +1676,13 @@ function isInputEmpty(moduleId: ModuleId, inputs: Record<string, string>): boole
 }
 
 // Layout text labeling mapping helpers
+// Layout text labeling mapping helpers
 function getModuleNumber(id: ModuleId): string {
   switch (id) {
-    case 'email_improvement': return '1';
-    case 'complaint_handling': return '2';
-    case 'call_script': return '3';
-    case 'soft_skills': return '4';
-    case 'escalation': return '5';
-    case 'email_writer': return '6';
-    case 'universal_coach': return '7';
+    case 'email_coach': return '1';
+    case 'soft_skills': return '2';
+    case 'escalation': return '3';
+    default: return '1';
   }
 }
 
@@ -1164,33 +1694,19 @@ function renderGuidedToolExplanation(id: ModuleId) {
   let tips = "";
 
   switch (id) {
-    case 'email_improvement':
-      what = "Analyzes, updates, and rewrites customer support email drafts to sound polished and polite while highlighting improvements.";
-      when = "When a draft feels too blunt, needs to deliver unfavorable policy news, or requires a refined professional posture.";
-      example = "We can't refund your money because our policy says 14 days and you bought it 20 days ago.";
-      expected = "An empathetic client-first email draft offering alternative solutions & actionable coaching insights.";
-      tips = "Describe any limitations gently. Always offer alternative options to turn a refusal into a relationship builder.";
-      break;
-    case 'complaint_handling':
-      what = "Generates high-empathy, ownership-focused responses for dissatisfied or angry service complaints.";
-      when = "When a buyer complains about a broken product, transit error, or driver behavior, and you need to lock in a resolution.";
-      example = "Your carrier courier literally threw the parcel, breaking the internal display screen!";
-      expected = "A compassionate reply accepting operational care and explicitly outlining approved remedy steps.";
-      tips = "Be transparent about available resolutions. Focus on the solution rather than defending structural limits.";
-      break;
-    case 'call_script':
-      what = "Builds structured, conversational, verbal telephone dialog cues to guide live support agent conversations.";
-      when = "Preparing for complex verbal calls, overcharge inquiries, technical walk-throughs, or managing difficult callers.";
-      example = "Billing overcharge duplicate transaction status for a subscription payment of $45.";
-      expected = "A 5-part script layout covering Greeting, Security Verification, Empathy, Resolution, and Professional Closing.";
-      tips = "Match the customer archetype to get tailored speaking paces. Use verification scripts to safeguard account privacy.";
+    case 'email_coach':
+      what = "Unified email assistant to compose, improve, reply, adjust tone (professional, empathetic, firm, apologetic), or generate comprehensive templates under standard regulatory compliance.";
+      when = "When you need to interact with a client via email, handle complex stock/demat payouts, KYC verifications, account closures, or write critical compliance templates.";
+      example = "My Demat payout of Rs 50,000 is delayed for 3 days. I want explanation immediately!";
+      expected = "Detected input type, customer sentiment, and 4 refined variations of the email: a standard final draft, a short version, an empathetic version, and a professional version, along with detailed coaching points.";
+      tips = "Select the task you wish to complete from the dropdown, or paste bullet details to generate a full-length draft email. Confirm compliance: check for profit guarantee avoidance.";
       break;
     case 'soft_skills':
-      what = "Audits agent responses, corrects negative brokerage words, and generates 6 distinct high-empathy/compliant stock-trading variations.";
-      when = "When answering a volatile client query about fund payouts, margin shortfalls, automated risks/closures (RMS), or charge queries.";
-      example = "Your transaction failed. Free margin is not sufficient, system is down.";
-      expected = "A detailed 10-point audit checking confidence, empathy, and professionalism with positive replacement text feeds.";
-      tips = "Avoid using negative words like 'Wait' or 'Not possible'. Use compliance-safe phrasing that validation engines approve.";
+      what = "Curated interactive reference of SEBI & depository compliant customer interaction alternatives for prompt support.";
+      when = "When you need to look up standard compliant phrasing for payouts, refunds, KYC states, Demat onboardings, margins, RMS liquidations, and brokerage charges.";
+      example = "Look up compliant alternatives to 'Wait for some time' or 'We auto-closed your positions'.";
+      expected = "Approved and prohibited side-by-side comparison with detailed regulatory justifications for instant copy.";
+      tips = "Use the search bar and category filters to locate vetted alternatives instantly. You can also test your planned draft in the sandbox evaluator!";
       break;
     case 'escalation':
       what = "Transforms hot tech crises into internal logistics tickets and customer delay updates simultaneously.";
@@ -1199,25 +1715,11 @@ function renderGuidedToolExplanation(id: ModuleId) {
       expected = "A professional internal ticket note with detailed key parameters, a customer status update, and an executive summary.";
       tips = "Always specify the core technical bottleneck and state the next promised ETA to secure solid customer credibility.";
       break;
-    case 'email_writer':
-      what = "Drafts comprehensive emails, concise letters, and short mobile message updates from raw bullet points.";
-      when = "When sending new enterprise announcements, bulk onboarding guidelines, or following up on resolved tickets.";
-      example = "Welcome enterprise clients, schedule API onboarding, need target whitelist IP spaces.";
-      expected = "A compelling subject line paired with a primary email body, a concise 3-sentence summary, and a mobile SMS text.";
-      tips = "Detail elements with comma-separated points so the copywriting assistant organizes them in the correct hierarchical sequence.";
-      break;
-    case 'universal_coach':
-      what = "Analyzes, logs, and processes any input text as either a customer query or an email draft. Computes soft skill grades, checks policy violations, and drafts 6 variations.";
-      when = "When you receive any ambiguous stock-trading query, raw complaint, or rough draft that needs SEBI-compliant guidance or multi-tone variations.";
-      example = "I want to complain about a refund delay for my stocks payout. You guys are useless.";
-      expected = "An in-depth coaching report: detected input parameters, quality scores, angry client de-escalations, and six-fold responses in English.";
-      tips = "Paste any freeform text. The tool will automatically draft a high-quality analysis and compliant variations.";
-      break;
   }
 
   return (
     <div id={`guided-explanation-${id}`} className="bg-slate-50 border border-slate-200 p-4 rounded-sm text-left text-xs space-y-3 shadow-xs">
-      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-200">
+      <div className="flex items-center gap-1.5 pb-2 border-b border-slate-250">
         <HelpCircle className="w-4 h-4 text-blue-600" />
         <h4 className="font-bold text-slate-900 tracking-tight text-xs">Guided Tool Companion</h4>
       </div>
@@ -1255,25 +1757,19 @@ function renderGuidedToolExplanation(id: ModuleId) {
 
 export function getModuleTitle(id: ModuleId): string {
   switch (id) {
-    case 'email_improvement': return 'Email Improvement Coach';
-    case 'complaint_handling': return 'Complaint Handling & De-escalation';
-    case 'call_script': return 'Interactive Call Script Generator';
-    case 'soft_skills': return 'Brokerage Phrase & Compliance Coach';
-    case 'escalation': return 'Escalation Note Architect';
-    case 'email_writer': return 'AI Full-Stack Email Copywriter';
-    case 'universal_coach': return 'Intelligent CS AI Coach';
+    case 'email_coach': return 'AI Email Draft Writer';
+    case 'soft_skills': return 'Brokerage Phrase Library';
+    case 'escalation': return 'Escalation Assistant';
+    default: return 'AI Support Coach';
   }
 }
 
 // Description labels
 function getModuleDescription(id: ModuleId): string {
   switch (id) {
-    case 'email_improvement': return 'Draft high-impact professional adjustments to customer service emails.';
-    case 'complaint_handling': return 'Learn to address angry customer complaint templates with concrete solutions and empathy.';
-    case 'call_script': return 'Generate highly structured phone script panels for greetings, checks, solutions, and farewell closings.';
-    case 'soft_skills': return 'Evaluate client support statement drafts against positive replacements and regulatory standards.';
+    case 'email_coach': return 'Draft, improve, reply, apologize, or generate comprehensive draft templates under standard regulatory compliance.';
+    case 'soft_skills': return 'A curated interactive reference of SEBI & depository compliant customer interaction alternatives for prompt stock-trading and portfolio support.';
     case 'escalation': return 'Synthesize technical issues into elegant logs for internal senior desk teams AND customer updates simultaneously.';
-    case 'email_writer': return 'Produce and format multiple template variants from a few descriptive goals.';
-    case 'universal_coach': return 'Analyze customer queries or email drafts to automatically audit compliance, score empathy, and generate six response variations.';
+    default: return 'Practice support scenarios and receive specialized real-time coaching feedback.';
   }
 }

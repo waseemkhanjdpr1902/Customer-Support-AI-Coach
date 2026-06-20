@@ -10,6 +10,7 @@ export interface User {
 }
 
 export type ModuleId =
+  | 'email_coach'
   | 'email_improvement'
   | 'complaint_handling'
   | 'call_script'

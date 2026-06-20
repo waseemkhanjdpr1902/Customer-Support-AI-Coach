@@ -18,9 +18,9 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     hinglish: "Home Screen"
   },
   tools: {
-    en: "Practice Playgrounds",
-    hi: "अभ्यास प्लेग्राउंड्स",
-    hinglish: "Practice Playgrounds"
+    en: "AI Workbench",
+    hi: "एआई वर्कबेंच",
+    hinglish: "AI Workbench"
   },
   learning: {
     en: "Learning Center",
@@ -159,9 +159,9 @@ export const UI_TRANSLATIONS: TranslationDictionary = {
     hinglish: "Apna complaint module choose karein, user details fill karein, perfect tone select karke AI Coaching run karein."
   },
   back_to_playgrounds: {
-    en: "← Back to Practice Playgrounds",
-    hi: "← मुख्य अभ्यास कार्यशाला पर वापस जाएं",
-    hinglish: "← Back to Practice Playgrounds"
+    en: "← Back to AI Workbench",
+    hi: "← मुख्य एआई वर्कबेंच पर वापस जाएं",
+    hinglish: "← Back to AI Workbench"
   },
   select_tone: {
     en: "Select Target Communication Tone Structure",

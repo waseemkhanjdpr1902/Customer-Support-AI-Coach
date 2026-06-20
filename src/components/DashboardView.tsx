@@ -21,36 +21,20 @@ interface DashboardViewProps {
 export default function DashboardView({ onSelectModule, stats, currentUser }: DashboardViewProps) {
   const MODULES: { id: ModuleId; description: string; icon: any; iconBg: string; textAccent: string; badge: string }[] = [
     { 
-      id: 'email_improvement', 
-      description: 'Improve rough support email drafts with structural guidelines and polish.',
+      id: 'email_coach', 
+      description: 'Unified financial support assistant. Compose, improve, reply, adjust tone, or generate templates according to strict compliance norms.',
       icon: Mail, 
       iconBg: 'bg-blue-600',
       textAccent: 'text-blue-600',
-      badge: 'Email Polish' 
-    },
-    { 
-      id: 'complaint_handling', 
-      description: 'Draft empathetic replies to highly frustrated or angry customer comments.',
-      icon: Smile, 
-      iconBg: 'bg-rose-600',
-      textAccent: 'text-rose-600',
-      badge: 'De-escalation' 
-    },
-    { 
-      id: 'call_script', 
-      description: 'Create ready-to-use verbal logs, verification scripts, and closing dialogues.',
-      icon: Phone, 
-      iconBg: 'bg-emerald-600',
-      textAccent: 'text-emerald-600',
-      badge: 'Verbal scripts' 
+      badge: 'Email Templates' 
     },
     { 
       id: 'soft_skills', 
-      description: 'Audit proposed lines, evaluate empathy scores, and receive developmental tips.',
+      description: 'A curated interactive reference of SEBI and depository compliant customer interaction alternatives for prompt stock-trading and portfolio support.',
       icon: Award, 
       iconBg: 'bg-indigo-600',
       textAccent: 'text-indigo-600',
-      badge: 'Interactive Audit' 
+      badge: 'Phrase Library' 
     },
     { 
       id: 'escalation', 
@@ -59,22 +43,6 @@ export default function DashboardView({ onSelectModule, stats, currentUser }: Da
       iconBg: 'bg-amber-600',
       textAccent: 'text-amber-600',
       badge: 'Operations Escalation' 
-    },
-    { 
-      id: 'email_writer', 
-      description: 'Synthesize raw short descriptions into standard emails, short snippets, and WhatsApp copies.',
-      icon: FileText, 
-      iconBg: 'bg-sky-600',
-      textAccent: 'text-sky-600',
-      badge: 'Copy Generator' 
-    },
-    {
-      id: 'universal_coach',
-      description: 'Analyze any text to automatically identify input type (Query or Draft), generate six variations, compute quality metrics, design de-escalations for angry clients, and perform strict financial compliance validation.',
-      icon: Sparkles,
-      iconBg: 'bg-violet-600',
-      textAccent: 'text-violet-600',
-      badge: 'Intelligent AI Coach'
     }
   ];
 

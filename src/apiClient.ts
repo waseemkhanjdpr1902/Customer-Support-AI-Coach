@@ -569,6 +569,267 @@ function getSimulatedCoachFallback(moduleId: string, inputs: any, tone: string, 
     };
   }
 
+  if (moduleId === "universal_coach") {
+    const rawText = inputs.textToAnalyze || "I want to complain about a refund delay for my stocks payout. You guys are useless.";
+    const textLower = rawText.toLowerCase();
+
+    const isDraft = rawText.includes("Dear") || rawText.includes("Hi") || rawText.includes("@") || rawText.includes("Sincerely") || rawText?.length > 150;
+    const isAngry = textLower.includes("useless") || textLower.includes("cheat") || textLower.includes("worst") || textLower.includes("fraud") || textLower.includes("angry");
+
+    let inputType = isDraft ? "Agent Reply / Email Draft" : "Customer Query";
+    let customerSentiment = isAngry ? "Angry" : "Frustrated";
+    let priority = isAngry ? "High" : "Medium";
+
+    let topicNameEn = "outstanding payout request";
+    let topicNameHi = "भुगतान निकासी अनुरोध";
+    let topicNameHinglish = "outstanding payout transaction request";
+
+    let resolutionEn = "wait for the regulatory settlement cycles to conclude";
+    let resolutionHi = "मानक नियामक समाशोधन प्रक्रियाओं के पूरा होने की प्रतीक्षा करें";
+    let resolutionHinglish = "regulatory banking clearing cycles complete hone ki wait karte hain";
+
+    if (textLower.includes("brokerage") || textLower.includes("charge") || textLower.includes("fee") || textLower.includes("cost") || textLower.includes("commission") || textLower.includes("gst")) {
+      topicNameEn = "applied ledger tariff and DP charges";
+      topicNameHi = "लागू लेज़र टैरिफ और डीपी शुल्क";
+      topicNameHinglish = "applied ledger fees and DP charges";
+      resolutionEn = "refer to our transparent tariff sheet and contract note";
+      resolutionHi = "हमारे पारदर्शी टैरिफ पोर्टल और संविदा नोट की जांच करें";
+      resolutionHinglish = "transparent tariff portals aur contract note verify karein";
+    } else if (textLower.includes("reject") || textLower.includes("order") || textLower.includes("margin") || textLower.includes("failed") || textLower.includes("square")) {
+      topicNameEn = "rejected order transaction or margin limits";
+      topicNameHi = "अस्वीकृत व्यापार ऑर्डर और मार्जिन सीमा";
+      topicNameHinglish = "rejected stock trades aur margin constraints";
+      resolutionEn = "establish adequate margin balances before resubmitting";
+      resolutionHi = "ट्रेड निष्पादन से पहले पर्याप्त सक्रिय मार्जिन संतुलन बनाए रखें";
+      resolutionHinglish = "standard trading credit margins and limit setup check karein";
+    } else if (textLower.includes("system") || textLower.includes("issue") || textLower.includes("glitch") || textLower.includes("technical") || textLower.includes("login") || textLower.includes("error") || textLower.includes("app") || textLower.includes("slow")) {
+      topicNameEn = "platform access connectivity latency or glitch";
+      topicNameHi = "प्लेटफ़ॉर्म लॉगिन और तकनीकी विलम्ब";
+      topicNameHinglish = "app logging and technical interface latency";
+      resolutionEn = "retry log in using our optimized high-availability routes";
+      resolutionHi = "हमारे अनुकूलित उच्च-विश्वसनीयता वैकल्पिक सर्वरों का प्रयोग करें";
+      resolutionHinglish = "backup high-speed mobile routers ya alternate terminal try karein";
+    } else if (textLower.includes("profile") || textLower.includes("kyc") || textLower.includes("document") || textLower.includes("verify") || textLower.includes("verification") || textLower.includes("onboard")) {
+      topicNameEn = "pending KYC profile verification status";
+      topicNameHi = "लंबित केवाईसी दस्तावेज सत्यापन";
+      topicNameHinglish = "pending profiles or KYC documents verification";
+      resolutionEn = "provide requested documents to finalize registry rules";
+      resolutionHi = "पंजीकरण नियमों को पूरा करने के लिए आवश्यक केवाईसी प्रमाण अपलोड करें";
+      resolutionHinglish = "necessary identity verification profiles setup upload karein";
+    }
+
+    let variations: any = {};
+    let emailAnalysis: any = {};
+    let angrySentimentHandling: any = {};
+    let coachingTips: any = {};
+
+    const selLang = language || "en";
+
+    if (selLang === "hi") {
+      variations = {
+        professional: {
+          tone: "औपचारिक और व्यावसायिक",
+          bestUseCase: "आधिकारिक संचार और मानक विनियामक अनुपालन के लिए।",
+          response: `प्रिय ग्राहक,\n\nहम आपके ${topicNameHi} के संबंध में आपकी चिंता को समझते हैं। उपलब्ध जानकारी के आधार पर, हम पुष्टि करना चाहते हैं कि हमारी टीम इस मामले की कड़ाई से समीक्षा कर रही है। कृपया ध्यान दें कि बाजार से संबंधित निवेश जोखिमों के अधीन हैं। हम आपसे अनुरोध करते हैं कि कृपया ${resolutionHi}।\n\nसादर,\nक्लाइंट सपोर्ट डेस्क`
+        },
+        empathetic: {
+          tone: "सहानुभूतिपूर्ण और आश्वस्तकारी",
+          bestUseCase: "जब ग्राहक तनाव या असंतोष में हो।",
+          response: `प्रिय ग्राहक,\n\nहम आपकी चिंता और ${topicNameHi} से होने वाली असुविधा को पूरी तरह से समझते हैं। उपलब्ध जानकारी के आधार पर, हम आपको आश्वस्त करना चाहते हैं कि आपकी संपत्तियां पूरी तरह सुरक्षित हैं। हमारी टीम विवरणों की पुनः जांच कर रही है। हम आपसे अनुरोध करते हैं कि कृपया हमें थोड़ा और समय दें।`
+        },
+        polite: {
+          tone: "विनम्र और सौम्य",
+          bestUseCase: "सकारात्मक संबंध बनाए रखने के लिए।",
+          response: `प्रिय ग्राहक,\n\nशीघ्र संपर्क के लिए धन्यवाद। उपलब्ध जानकारी के आधार पर, आपके ${topicNameHi} का समाधान सर्वोच्च प्राथमिकता पर किया जा रहा है। हम आपसे अनुरोध करते हैं कि कृपया किसी भी अन्य सहायता के लिए बेझिझक हमसे संपर्क करें। आपकी सेवा हमारा सौभाग्य है।`
+        },
+        firm: {
+          tone: "स्पष्ट और दृढ़",
+          bestUseCase: "विनियामक नीतियों और प्रक्रियाओं को स्पष्ट करने के लिए।",
+          response: `प्रिय ग्राहक,\n\nहम आपसे ध्यान देने का अनुरोध करते हैं कि सभी प्रक्रियाएं सेबी (SEBI) और विनियामक दिशानिर्देशों के अनुरूप संचालित होती हैं। उपलब्ध जानकारी के आधार पर, आपके ${topicNameHi} के लिए किसी भी नियम को दरकिनार नहीं किया जा सकता है। कृपया ध्यान दें कि बाजार निवेश जोखिमों के अधीन हैं, और हम आपसे ${resolutionHi} का अनुरोध करते हैं।`
+        },
+        apology: {
+          tone: "त्रुटि निवारण और क्षमा",
+          bestUseCase: "परिचालन में विलम्ब या त्रुटि होने पर।",
+          response: `प्रिय ग्राहक,\n\nकृपया आपके ${topicNameHi} में हुई अत्यधिक अनपेक्षित देरी के लिए हमारी गंभीर क्षमा स्वीकार करें। उपलब्ध जानकारी के आधार पर, हमारी तकनीकी टीम इस विसंगति को तत्काल दूर करने में जुटी है। हम इसे जल्द से जल्द सुधारने के लिए प्रतिबद्ध हैं।`
+        },
+        escalation: {
+          tone: "वरिष्ठ/नियामक स्तर पर अग्रेषण",
+          bestUseCase: "अतिरिक्त समीक्षा और विशेषज्ञ विश्लेषण की आवश्यकता होने पर।",
+          response: `प्रिय ग्राहक,\n\nहम सूचित करना चाहते हैं कि हमने आपके ${topicNameHi} विवरण को संबंधित नियामक पर्यवेक्षक डेस्क पर अग्रेषित कर दिया है। उपलब्ध जानकारी के आधार पर, हमारी विशेषज्ञ टीम गहन जांच कर रही है। हम आपसे अनुरोध करते हैं कि कृपया २ घंटों के भीतर आधिकारिक अपडेट की प्रतीक्षा करें।`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 80,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 78,
+        overallScore: 85,
+        strengths: "समस्या का सीधा समाधान और नियामक आवश्यकताओं का स्पष्ट समावेशन किया गया है।",
+        areasToImprove: "ड्राफ्ट को आनुपातिक रूप से और अधिक सहानुभूतिपूर्ण और मानवीय बनाया जा सकता है।",
+        suggestedBetterPhrases: `'वेट करो' या 'जल्दी नहीं होगा' के स्थान पर 'उपलब्ध जानकारी के आधार पर हम इस समाधान प्रक्रिया को सुगम बनाने के लिए आपसे प्रतीक्षा का अनुरोध करते हैं' का प्रयोग करें।`
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "अत्यधिक चिंतित / उग्र ग्राहक",
+        urgencyLevel: "क्रिटिकल सर्वोच्च प्राथमिकता",
+        riskLevel: "उच्च पलायन जोखिम",
+        suggestedTone: "तनाव कम करने वाला, अत्यंत सहानुभूतिपूर्ण और समाधान-उन्मुख",
+        deEscalationResponse: `हम आपके ${topicNameHi} को लेकर आपके रोष को पूरी तरह समझते हैं। मैं व्यक्तिगत रूप से इसकी जिम्मेदारी संभाल रहा हूँ ताकि संपूर्ण स्पष्टता स्थापित हो सके।`,
+        immediateActionStatement: `Maine standard clearing डेस्क को आपके dockets प्राथमिकता पर मैन्युअल क्लियर करने का विशेष अनुरोध किया है।`,
+        ownershipStatement: "मैं इस समस्या के पूर्ण निवारण का दायित्व लेता हूँ और जब तक समाधान पूर्ण नहीं होता, सीधे आपसे जुड़ा रहूँगा।",
+        nextStepStatement: "मैं निजी तौर पर आपके संपर्क नंबर अथवा पंजीकृत ईमेल पर १ घंटे में लेन-देन संदर्भ विवरण के साथ वापस आऊंगा।"
+      };
+
+      coachingTips = {
+        communicationImprovement: "विनियामकीय शर्तों को अत्यधिक लंबे पैराग्राफ के बजाय सरल सूचियों में दर्शाइए।",
+        softSkillsImprovement: "ग्राहक के वित्तीय प्रश्नों पर कंपनी की नियमावली उद्धृत करने से पहले उसके दर्द को आश्वस्त करें।",
+        whatSeniorManagerWrites: `"उपलब्ध जानकारी के आधार पर, हम पुष्टि करते हैं कि आपके ${topicNameHi} की गहन सुरक्षा जांच पूर्ण कर दी गई है। कृपया ध्यान दें कि बाजार निवेश जोखिम के अधीन हैं, और हम आपकी सहायता के लिए तैयार हैं।"`,
+        whatNotToWrite: `"नियमों के अनुसार इसे होने में समय लगेगा, हम इसमें कुछ नहीं कर सकते अतः बेवजह आपत्ति न करें।"`
+      };
+
+    } else if (selLang === "hinglish") {
+      variations = {
+        professional: {
+          tone: "Formal and Business-like tone",
+          bestUseCase: "Routine checks aur system regulatory status updates share karne ke liye.",
+          response: `Dear Customer,\n\nWe understand your concern pending ${topicNameHinglish} ke baare mein. Based on the information available, we verify kiya hai ki humari compliance operations team isko review kar rahi hai. Please note that market investments are subject to risk parameters. We request you to kindly ${resolutionHinglish}.\n\nWarm regards,\nClient Services Team`
+        },
+        empathetic: {
+          tone: "Empathetic and timing comfort tone",
+          bestUseCase: "Jab customer delay, cost updates ya failure se anxious feel kare.",
+          response: `Dear Customer,\n\nWe understand your concern aur hum completely realize karte hain ki ${topicNameHinglish} delay hone se aapko kitna inconvenience hua hai. Based on the information available, hum clarify karte hain ki aapke funds aur transaction details entirely safe hain database registers me. Hum absolute priority par action update karwa rahe hain.`
+        },
+        polite: {
+          tone: "Polite and highly support assistance guide",
+          bestUseCase: "General customer feedback and support help ke liye.",
+          response: `Dear Customer,\n\nThanks for reaching out today. Based on the information available, clears verification coordinates priority queue me process kiye ja rahe hain. We request you to kindly let us know features updates or requirements ke liye, hum help ke liye ready hain. Have a great day.`
+        },
+        firm: {
+          tone: "Firm and compliance parameters setter",
+          bestUseCase: "Strict margins aur regulatory non-negotiable rules details clear karne ke liye.",
+          response: `Dear Customer,\n\nWe request you to note ki sabhi transaction steps standard SEBI and exchange audit instructions guidelines ko satisfy karte hain. Based on the information available, is standard procedure ko bypass nahi kiya ja sakta. We request your cooperation standard verification policy rules ke sath.`
+        },
+        apology: {
+          tone: "Sincere Apology and instant server optimization",
+          bestUseCase: "App delay ya latency disturbance error parameters handle karne ke liye.",
+          response: `Dear Customer,\n\nPlatform latency ya dynamic delay ke chalte hone wali standard inconvenience ke liye we sincerely apologize. Based on the information available, humari technical and clearing desk details troubleshoot manually resolve karke aapko optimal experience restore karwayegi.`
+        },
+        escalation: {
+          tone: "Senior Technical Desk Elevation",
+          bestUseCase: "High priority challenges aur clearance disputes elevation support.",
+          response: `Dear Customer,\n\nWe request you to note ki ${topicNameHinglish} ticket ko humari Senior Auditor & Compliance Coordinator Desk ko forward kar diya gaya hai. Based on the information available, expert review will finalize transaction records. We request you to wait for dynamic status SMS or official mail next 2 hours me.`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 80,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 78,
+        overallScore: 85,
+        strengths: "Standard compliance requirements aur delay steps accurate specify kiye hain with professional boundaries.",
+        areasToImprove: "Draft sounds raw. Stiffer words directly exclude karein client's trust safety build karne ke liye.",
+        suggestedBetterPhrases: "Dry phrase 'We cannot override systems' ke jagah 'Based on the information available, our senior leaders are tracking your queries personally to expedite standard clearances' utilize karein."
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "Highly frustrated and angry client regarding transactional issues",
+        urgencyLevel: "Critical Operational Precedence",
+        riskLevel: "High risk - churn level high",
+        suggestedTone: "Calm, validating, highly solution and commitment-focused",
+        deEscalationResponse: `Hum completely understand karte hain ki is ${topicNameHinglish} issue ke chalte aap kitne angry aur disturbed hain, and I am personally following up with compliance.`,
+        immediateActionStatement: `Maine clears audit coordinators ko requests forward ki hai status files priority checking bypass overrides ke liye.`,
+        ownershipStatement: "I take direct responsibility is resolution ki aur track karunga status when safe updates clear na ho.",
+        nextStepStatement: "I will call or message you private 1 hour ke absolute limit me verified transaction transaction ID ke sath."
+      };
+
+      coachingTips = {
+        communicationImprovement: "Complex transaction errors and SEBI boundaries description ko clean bullet points style me show karein.",
+        softSkillsImprovement: "First validate client's financial anxiety before quoting rigid documents signed or online ledger rules.",
+        whatSeniorManagerWrites: `"Based on the information available, we verify standard compliance verification checks are completed. Please note that market-related investments are subject to risk parameters."`,
+        whatNotToWrite: `"Is process me dynamic timelines lagte hain so wait and don't make multiple complaints tickets on our board."`
+      };
+
+    } else {
+      // English (Default)
+      variations = {
+        professional: {
+          tone: "Formal and business-like.",
+          bestUseCase: "When communicating with standard accounts or delivering regulatory updates.",
+          response: `Dear Customer,\n\nWe understand your concern regarding the ${topicNameEn}. Based on the information available, we verify that your request is processing within standard banking and regulatory timelines. Please note that market-related investments are subject to risk parameters. We request you to kindly ${resolutionEn}.\n\nWarm regards,\nClient Operations Team`
+        },
+        empathetic: {
+          tone: "Show understanding and reassurance.",
+          bestUseCase: "When customers are experiencing critical issues or financial anxiety.",
+          response: `Dear Customer,\n\nWe understand your concern and completely validate how frustrating this delay to your ${topicNameEn} is to your plans. Based on the information available, we want to reassure you that your funds and portfolio assets are entirely secure. Our team will review the status from our end to ensure that bank integrations successfully clear your deposit. We request you to give us some time.`
+        },
+        polite: {
+          tone: "Polite and highly courteous.",
+          bestUseCase: "For general positive relations and billing help.",
+          response: `Dear Customer,\n\nThank you so much for reaching out to us today regarding your ${topicNameEn}. Based on the information available, we are pleased to confirm that our billing and clearing desk is processing your request at high priority. We request you to kindly let us know if you need any further clarifications. It is our pleasure to help you.`
+        },
+        firm: {
+          tone: "Firm and expectation-setting.",
+          bestUseCase: "When clarifying strict margin policies or withdrawal conditions.",
+          response: `Dear Customer,\n\nWe request you to note that all accounts and ${topicNameEn} steps must strictly align with exchange settlement guidelines and statutory rules. Based on the information available, this procedural review cannot be bypassed. Please note that market-related investments are subject to risk parameters. We request you to ${resolutionEn}.`
+        },
+        apology: {
+          tone: "Apology and trust maintenance.",
+          bestUseCase: "When there is a definite banking integration bottleneck or technical error.",
+          response: `Dear Customer,\n\nPlease accept our sincere apologies for the unexpected friction or delay concerning your ${topicNameEn}. We understand your concern and value the trust you place in us. Based on the information available, our tech supervisors and billing support are resolving this bottleneck immediately. Rest assured, we are committed to making this right.`
+        },
+        escalation: {
+          tone: "Suitable for Tier-2 escalation.",
+          bestUseCase: "When issues require senior supervisor intervention or technical audit.",
+          response: `Dear Customer,\n\nWe request you to note that we have escalated your ${topicNameEn} concerns to our Risk Management and Clearing Supervisors. Based on the information available, our senior team will review your account settings and bank response logs. We request you to wait for an official status report from this premium ticketing desk shortly.`
+        }
+      };
+
+      emailAnalysis = {
+        professionalismScore: 88,
+        empathyScore: 78,
+        clarityScore: 85,
+        grammarScore: 92,
+        ownershipScore: 75,
+        overallScore: 84,
+        strengths: `Directly addresses the ${topicNameEn} issue while maintaining structural safety parameters in accordance with compliance.`,
+        areasToImprove: "Tone in raw draft can sound defensive or abrupt. Use more positive action markers to avoid sounding robotic.",
+        suggestedBetterPhrases: `Replace dry wordings like 'We can't do anything about this' with 'We are actively coordinating with our clearing partners to expedite your ${topicNameEn} resolution.'`
+      };
+
+      angrySentimentHandling = {
+        customerEmotion: "Highly Frustrated / Dissatisfied",
+        urgencyLevel: "Critical - High Financial Priority",
+        riskLevel: "High - Account Churn At-Risk",
+        suggestedTone: "De-escalating, Highly Empathetic & Solution-driven",
+        deEscalationResponse: `We understand your concern, and I am personally taking charge of your ticket right now to guarantee your ${topicNameEn} is fully handled.`,
+        immediateActionStatement: `I have requested a manual dispatch/clear operation to fast-track your folder and bypass the standard automated delay.`,
+        ownershipStatement: "I am taking direct ownership of this resolution process, and I will track it personally until any discrepancies are successfully verified in your dashboard.",
+        nextStepStatement: "I will reach back out to you personally within 1 hour with the financial transaction ID."
+      };
+
+      coachingTips = {
+        communicationImprovement: "Divide complex statutory rules into scannable points so clients feel secure, not overwhelmed.",
+        softSkillsImprovement: "Empathy is paramount. Under regulatory standards, maintain client compliance while validating active anxieties regarding assets.",
+        whatSeniorManagerWrites: `"Based on the information available, we verify that safety audits are complete and we are actively triggering a direct clearance. Please note that market investments are subject to risk parameters."`,
+        whatNotToWrite: `"Your request cannot be completed because you haven't completed your profiles and it is not our fault."`
+      };
+    }
+
+    return {
+      inputType,
+      customerSentiment,
+      priority,
+      variations,
+      emailAnalysis,
+      angrySentimentHandling,
+      coachingTips
+    };
+  }
+
   // AI Email Writer
   return {
     subjectLine: `Important Update: ${inputs.purpose || "Customer Service Coordination"}`,

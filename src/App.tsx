@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Sparkles, Mail, Phone, Smile, Award, ShieldAlert, FileText, 
-  Menu, X, Laptop, BookOpen, AlertCircle, 
-  ArrowRight, Heart, Info, LayoutGrid, Clock, UsersRound
+  Sparkles, Mail, Phone, Smile, Award, ShieldAlert, FileText
 } from 'lucide-react';
 import { User, HistoryItem, LearningResource, ModuleId } from './types';
 import { STATIC_LEARNING_RESOURCES, STATIC_STATS, STATIC_HISTORY } from './fallbackData';
@@ -10,10 +8,9 @@ import { apiClient } from './apiClient';
 import DashboardView from './components/DashboardView';
 import CoachModule from './components/CoachModule';
 import HistoryList from './components/HistoryList';
-import AdminReview from './components/AdminReview';
-import TeamLearning from './components/TeamLearning';
 import HomeView from './components/HomeView';
-import CommunicationTips from './components/CommunicationTips';
+
+const brandLogo = "/src/assets/images/coach_ai_logo_1781955449391.jpg";
 
 const GUEST_USER: User = {
   id: "u-static",
@@ -81,13 +78,7 @@ export default function App() {
         return (
           <HomeView 
             onSelectFeature={(id) => {
-              if (id === 'phrase_library') {
-                setActiveTab('phrase_bank');
-              } else if (id === 'learning_center') {
-                setActiveTab('learning');
-              } else {
-                setActiveTab(id);
-              }
+              setActiveTab(id);
             }}
             stats={stats}
           />
@@ -105,33 +96,15 @@ export default function App() {
       
       case 'history':
         return <HistoryList history={history} currentUser={currentUser} />;
-      
-      case 'learning':
-        return <TeamLearning key="learning-full" resources={learningResources} initialCategory="all" />;
 
-      case 'phrase_bank':
-        return <TeamLearning key="learning-phrases" resources={learningResources} initialCategory="phrase_bank" />;
-
-      case 'tips':
-        return <CommunicationTips />;
-
-      case 'review':
-        return (
-          <AdminReview 
-            history={history} 
-            currentUser={currentUser} 
-            onReviewSubmitted={() => loadHistory(currentUser)} 
-          />
-        );
-
-      default: // Active module tabs (email_improvement, complaint_handling, call_script, soft_skills, escalation, email_writer)
+      default: // Active module tabs (email_coach, email_improvement, complaint_handling, call_script, soft_skills, escalation, email_writer)
         return (
           <div className="space-y-4">
             <button
-              onClick={() => setActiveTab('tools')}
+              onClick={() => setActiveTab('home')}
               className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition cursor-pointer font-sans"
             >
-              ← Back to Practice Playgrounds
+              ← Back to AI Workbench
             </button>
             <CoachModule 
               moduleId={activeTab as ModuleId} 
@@ -155,9 +128,12 @@ export default function App() {
           
           {/* Logo brand */}
           <div className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition shrink-0" onClick={() => setActiveTab('home')}>
-            <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shadow-xs">
-              <Sparkles className="w-4 h-4" />
-            </div>
+            <img 
+              src={brandLogo} 
+              alt="COACH.AI Logo" 
+              className="w-8 h-8 rounded object-cover border border-slate-700 shadow-sm"
+              referrerPolicy="no-referrer"
+            />
             <div className="text-left">
               <h1 className="text-sm font-black text-white tracking-wider leading-none">COACH.AI</h1>
               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block mt-0.5">Support Coach Suite</span>
@@ -178,59 +154,48 @@ export default function App() {
               Home
             </button>
             <button
-              id="nav-btn-tools"
-              onClick={() => setActiveTab('tools')}
+              id="nav-btn-email"
+              onClick={() => setActiveTab('email_coach')}
               className={`px-3 py-2 rounded-sm transition cursor-pointer ${
-                activeTab === 'tools' || ['email_improvement', 'complaint_handling', 'call_script', 'soft_skills', 'escalation', 'email_writer'].includes(activeTab)
+                activeTab === 'email_coach' 
                   ? 'bg-blue-600 text-white font-extrabold shadow-sm' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              Tools
+              AI Email Draft Writer
             </button>
             <button
-              id="nav-btn-learning"
-              onClick={() => setActiveTab('learning')}
+              id="nav-btn-soft-skills"
+              onClick={() => setActiveTab('soft_skills')}
               className={`px-3 py-2 rounded-sm transition cursor-pointer ${
-                activeTab === 'learning' 
+                activeTab === 'soft_skills' 
                   ? 'bg-blue-600 text-white font-extrabold shadow-sm' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              Learning Center
+              Brokerage Phrase Library
             </button>
             <button
-              id="nav-btn-phrase-bank"
-              onClick={() => setActiveTab('phrase_bank')}
+              id="nav-btn-escalation"
+              onClick={() => setActiveTab('escalation')}
               className={`px-3 py-2 rounded-sm transition cursor-pointer ${
-                activeTab === 'phrase_bank' 
+                activeTab === 'escalation' 
                   ? 'bg-blue-600 text-white font-extrabold shadow-sm' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              Phrase Library
+              Escalation Assistant
             </button>
             <button
-              id="nav-btn-tips"
-              onClick={() => setActiveTab('tips')}
+              id="nav-btn-history"
+              onClick={() => setActiveTab('history')}
               className={`px-3 py-2 rounded-sm transition cursor-pointer ${
-                activeTab === 'tips' 
+                activeTab === 'history' 
                   ? 'bg-blue-600 text-white font-extrabold shadow-sm' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  : 'text-slate-200 hover:bg-slate-800 hover:text-white'
               }`}
             >
-              Communication Tips
-            </button>
-            <button
-              id="nav-btn-review"
-              onClick={() => setActiveTab('review')}
-              className={`px-3 py-2 rounded-sm transition cursor-pointer ${
-                activeTab === 'review' 
-                  ? 'bg-amber-600 text-white font-extrabold shadow-sm' 
-                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-              }`}
-            >
-              Manager Audits
+              Saved Logs
             </button>
           </nav>
 
