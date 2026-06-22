@@ -234,6 +234,30 @@ export const apiClient = {
       recalculateLocalStats();
     }
     return true;
+  },
+
+  async deleteHistoryItem(id: string): Promise<boolean> {
+    try {
+      await fetch(`/api/history/${id}`, { method: 'DELETE' });
+    } catch (e) {
+      console.warn('DELETE backend history error, deleting locally');
+    }
+    const localHist = getLocal('coach_history') || [];
+    const updated = localHist.filter((h: HistoryItem) => h.id !== id);
+    setLocal('coach_history', updated);
+    recalculateLocalStats();
+    return true;
+  },
+
+  async clearAllHistory(): Promise<boolean> {
+    try {
+      await fetch('/api/history', { method: 'DELETE' });
+    } catch (e) {
+      console.warn('DELETE All backend history error, clearing locally');
+    }
+    setLocal('coach_history', []);
+    recalculateLocalStats();
+    return true;
   }
 };
 

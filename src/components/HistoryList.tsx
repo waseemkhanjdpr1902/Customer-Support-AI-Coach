@@ -2,17 +2,19 @@ import React, { useState } from 'react';
 import { 
   Sparkles, Mail, Phone, Smile, Award, ShieldAlert, FileText, 
   Search, Filter, Calendar, Folder, ChevronRight, MessageSquare, 
-  CheckCircle, BadgeAlert, Copy, Check 
+  CheckCircle, BadgeAlert, Copy, Check, Trash2, Download, FileSpreadsheet
 } from 'lucide-react';
 import { HistoryItem, ModuleId } from '../types';
 import { getModuleTitle } from './CoachModule';
+import { apiClient } from '../apiClient';
 
 interface HistoryListProps {
   history: HistoryItem[];
   currentUser: { id: string; role: string };
+  onRefresh?: () => void;
 }
 
-export default function HistoryList({ history, currentUser }: HistoryListProps) {
+export default function HistoryList({ history, currentUser, onRefresh }: HistoryListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [moduleFilter, setModuleFilter] = useState<string>('all');
   const [toneFilter, setToneFilter] = useState<string>('all');
@@ -23,6 +25,96 @@ export default function HistoryList({ history, currentUser }: HistoryListProps) 
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to delete this log?")) return;
+    await apiClient.deleteHistoryItem(id);
+    if (onRefresh) onRefresh();
+  };
+
+  const handleClearAll = async () => {
+    if (!window.confirm("Are you sure you want to clear your entire coaching saved history? This cannot be undone.")) return;
+    await apiClient.clearAllHistory();
+    if (onRefresh) onRefresh();
+  };
+
+  const handleExportCSV = () => {
+    if (filteredHistory.length === 0) return;
+    
+    // Construct CSV Header
+    const headers = ["ID", "Module", "User", "Date", "Tone", "Inputs Given", "Outputs Generated"];
+    const rows = filteredHistory.map(item => {
+      const inputsStr = Object.entries(item.inputData)
+        .map(([k, v]) => `${k}: ${String(v).replace(/"/g, '""')}`)
+        .join(' | ');
+      const outputsStr = Object.entries(item.outputData)
+        .map(([k, v]) => `${k}: ${String(v).replace(/"/g, '""')}`)
+        .join(' | ');
+        
+      return [
+        item.id,
+        item.moduleId,
+        item.userName,
+        new Date(item.timestamp).toISOString(),
+        item.tone,
+        `"${inputsStr}"`,
+        `"${outputsStr}"`
+      ];
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+      
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `CS_AI_Coach_Logs_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExportTXT = () => {
+    if (filteredHistory.length === 0) return;
+    
+    let content = `CS AI COACH COCHING HISTORY LOGS\n`;
+    content += `Export Date: ${new Date().toLocaleString()}\n`;
+    content += `==================================================\n\n`;
+    
+    filteredHistory.forEach((item, index) => {
+      content += `${index + 1}. MODULE: ${getModuleTitle(item.moduleId).toUpperCase()}\n`;
+      content += `   Agent name: ${item.userName}\n`;
+      content += `   Timestamp: ${new Date(item.timestamp).toLocaleString()}\n`;
+      content += `   Instruction Tone: ${item.tone}\n`;
+      content += `   --------------------------------------------------\n`;
+      content += `   INPUTS GIVEN:\n`;
+      Object.entries(item.inputData).forEach(([k, v]) => {
+        content += `     - ${camelCaseToWords(k)}: ${v}\n`;
+      });
+      content += `\n   AI COACH RECCOMENDATIONS / OUTPUTS:\n`;
+      Object.entries(item.outputData).forEach(([k, v]) => {
+        if (v && typeof v !== 'object') {
+          content += `     - ${camelCaseToWords(k)}:\n       ${String(v).replace(/\n/g, '\n       ')}\n`;
+        }
+      });
+      if (item.review) {
+        content += `\n   SUPERVISOR REVIEW:\n`;
+        content += `     - Reviewer: ${item.review.reviewerName}\n`;
+        content += `     - Status: ${item.review.status}\n`;
+        content += `     - Feedback: "${item.review.comment}"\n`;
+      }
+      content += `\n==================================================\n\n`;
+    });
+    
+    const element = document.createElement("a");
+    const file = new Blob([content], {type: 'text/plain'});
+    element.href = URL.createObjectURL(file);
+    element.download = `CS_AI_Coach_Logs_${new Date().toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   const filteredHistory = history.filter(item => {
@@ -40,13 +132,46 @@ export default function HistoryList({ history, currentUser }: HistoryListProps) 
   return (
     <div id="history-list-view" className="space-y-5 animate-fade-in text-left">
       {/* Page Title */}
-      <div>
-        <h2 className="text-lg font-bold text-slate-900 tracking-tight">Saved Coaching History</h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {currentUser.role === 'manager' 
-            ? "View and filter all standard practice outputs saved by agents across your department."
-            : "Review your previously saved coaching drafts, empathy audits, and script cards."}
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-sm border border-slate-200">
+        <div>
+          <h2 className="text-sm font-bold text-slate-900 tracking-tight">Saved Coaching History</h2>
+          <p className="text-xs text-slate-500 mt-0.5">
+            {currentUser.role === 'manager' 
+              ? "View and filter all standard practice outputs saved by agents across your department."
+              : "Review your previously saved coaching drafts, empathy audits, and script cards."}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <button
+            id="btn-export-csv"
+            onClick={handleExportCSV}
+            className="px-3 py-1.5 text-xs font-semibold text-slate-705 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-sm flex items-center gap-1.5 cursor-pointer transition select-none"
+            title="Export filtered results to CSV file"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Export CSV</span>
+          </button>
+          
+          <button
+            id="btn-export-txt"
+            onClick={handleExportTXT}
+            className="px-3 py-1.5 text-xs font-semibold text-slate-705 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-sm flex items-center gap-1.5 cursor-pointer transition select-none"
+            title="Download formatted text transcription"
+          >
+            <Download className="w-3.5 h-3.5 text-blue-600" />
+            <span>Download TXT</span>
+          </button>
+          
+          <button
+            id="btn-clear-all"
+            onClick={handleClearAll}
+            className="px-3 py-1.5 text-xs font-semibold text-red-650 bg-red-50 hover:bg-red-100 border border-red-100 rounded-sm flex items-center gap-1.5 cursor-pointer transition select-none"
+            title="Delete all history from localStorage"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Clear All</span>
+          </button>
+        </div>
       </div>
 
       {/* Control panel (Search & Filters) */}
@@ -157,7 +282,15 @@ export default function HistoryList({ history, currentUser }: HistoryListProps) 
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between sm:justify-end gap-2 border-t border-slate-100 pt-1.5 sm:border-0 sm:pt-0 shrink-0">
+                  <div className="flex items-center justify-between sm:justify-end gap-3.5 border-t border-slate-100 pt-1.5 sm:border-0 sm:pt-0 shrink-0">
+                    <button
+                      id={`btn-delete-log-${item.id}`}
+                      onClick={(e) => handleDelete(item.id, e)}
+                      className="p-1.5 text-slate-450 hover:text-red-650 hover:bg-slate-100/80 rounded-sm transition cursor-pointer"
+                      title="Delete Saved Log"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                     <span className="text-[10px] text-slate-400 font-medium">Click to view fields</span>
                     <ChevronRight className={`w-3.5 h-3.5 text-slate-400 transform transition ${isExpanded ? 'rotate-90' : ''}`} />
                   </div>

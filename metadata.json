@@ -1,6 +1,6 @@
 {
-  "name": "Customer Support AI Coach",
-  "description": "An internal coaching and training platform for support agents to improve support email quality, handle difficult customer complaints, write call scripts, build soft skills, and escalate cases, featuring manager review feedback portals.",
+  "name": "CS AI Coach – Broking Support Assistant",
+  "description": "An internal, login-free coaching and training workspace for stock market broker customer support staff to draft compliant support responses, handle trading complaints, consult approved phrase banks, generate call scripts, and learn soft skills.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

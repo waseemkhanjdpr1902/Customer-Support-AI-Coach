@@ -19,7 +19,7 @@ const PHRASES_DATA = [
     id: 'phrase-1',
     category: 'Payouts & Refunds',
     prohibited: "Your payout of Rs 50,000 is stuck in standard processing. Just wait for some time.",
-    compliant: "Aapka Rs 50,000 withdrawal request registered ho chuka hai. Standard banking settlement cycle ke tehet hum isse complete trace kar rahe hain aur ye agle 2 hours me bank ledger me update ho jayega.",
+    compliant: "Your withdrawal request for Rs 50,000 has been registered. Under standard banking settlement cycles, we are actively tracing this transaction and it will be updated in your bank ledger within the next 2 hours.",
     sebiRule: "SEBI Settlement of Client Funds Mandate (Section 4.2)",
     explanation: "Avoid telling clients to 'just wait' or calling transactions 'stuck'. Always provide specific operational settlement periods and state that tracing/verification is in progress under standard bank policies."
   },
@@ -27,7 +27,7 @@ const PHRASES_DATA = [
     id: 'phrase-2',
     category: 'Payouts & Refunds',
     prohibited: "Don't worry, we guarantee 100% refund of delayed funds charges.",
-    compliant: "Hum delayed transactions review guidelines block check kar rahe hain. Standard tariff directives and SEBI regulatory disclosures ke tehet hum market profit ya charge refunds ki financial guarantee promise nahi karte.",
+    compliant: "We are reviewing the delayed transaction against our standard guidelines. In accordance with standard tariff directives and SEBI regulatory disclosures, we do not promise or offer financial guarantees on market profits or charge refunds.",
     sebiRule: "SEBI circular on Prohibition of Guaranteed Returns (Clause 6)",
     explanation: "Strictly prohibit using words like 'guarantee' or promising certain refunds for delayed transactions. Always mention tariff disclosures and regulatory checks."
   },
@@ -35,7 +35,7 @@ const PHRASES_DATA = [
     id: 'phrase-3',
     category: 'KYC & Demat',
     prohibited: "Your KYC verification is rejected. You entered wrong details. Modify it or we will close description.",
-    compliant: "Inconvenience ke liye sincere apologies. Aapke KYC documents me registered name discrepancy detect hui hai. Regulatory verification requirements ke tehet, aap in details ko simple online portal se modify kar sakte hain taaki approval instantly setup ho sake.",
+    compliant: "We sincerely apologize for the inconvenience. A discrepancy in your registered name has been detected in your KYC documents. In compliance with regulatory verification requirements, you can easily modify these details through our online portal for instant approval and setup.",
     sebiRule: "SEBI KRA (KYC Registration Agency) Regulations, 2011",
     explanation: "Avoid aggressive rejection terminology. Express apology for the verification checkpoint, outline the specific mismatches, and guide the investor helper link step-by-step."
   },
@@ -43,7 +43,7 @@ const PHRASES_DATA = [
     id: 'phrase-4',
     category: 'KYC & Demat',
     prohibited: "We will skip KRA document verification to open your account fast.",
-    compliant: "Standard financial safety rules and KRA norms ke compliance me account start karne se pehle pan and offline verification mandatory hai. Is audit process me normally 12 working hours lagte hain.",
+    compliant: "In compliance with standard financial safety regulations and KRA norms, PAN and in-person verification are mandatory prior to opening an account. This audit process typically requires up to 12 working hours.",
     sebiRule: "PMLA Act Section 12 & SEBI anti-money laundering circulars",
     explanation: "Never suggest or write that regulatory checks, paperwork, or document uploads can be skipped, bypassed, or falsified to save time."
   },
@@ -51,7 +51,7 @@ const PHRASES_DATA = [
     id: 'phrase-5',
     category: 'Margin & RMS',
     prohibited: "Our Risk Management Team automatically closed/squared-off your open trade because you had zero margin. We are not responsible.",
-    compliant: "Exchange margin shortfall guidelines ke rule compliance me Risk Management Desk (RMS) ko automatic action ke tehet positions wind-up karni padti hain. Hum position protection ke liye ledger margin check karne ki criteria suggest karte hain.",
+    compliant: "In strict compliance with exchange margin shortfall guidelines, our Risk Management Desk (RMS) is required to automatically square off outstanding positions. We highly recommend monitoring and maintaining adequate ledger margins to protect your active positions.",
     sebiRule: "SEBI Peak Margin & Automatic Risk Square-Off Mandate",
     explanation: "Avoid telling the user 'we are not responsible' or using defensive tones. Formulate it as standard automatic risk management framework (RMS) triggers linked strictly to SEBI Peak Margin guidelines."
   },
@@ -59,7 +59,7 @@ const PHRASES_DATA = [
     id: 'phrase-6',
     category: 'Margin & RMS',
     prohibited: "Take 10x high leverage directly from our premium desk and trade risk-free.",
-    compliant: "Derivative trading peak leverage criteria strictly Exchange and SEBI MTF (Margin Trading Facility) standard requirements se governed hain. Standard disclosure: derivatives investments are subject to capital risk factors.",
+    compliant: "Peak leverage criteria for derivative trading are strictly governed by Exchange and SEBI Margin Trading Facility (MTF) regulations. Standard Disclosure: All derivative investments are subject to capital risk factors.",
     sebiRule: "SEBI Margin Trading Facility Directive 2022",
     explanation: "Never claim leverage is 'risk-free' or state arbitrary, unapproved multipliers. Frame margin allocations under the legal MTF framework."
   },
@@ -67,7 +67,7 @@ const PHRASES_DATA = [
     id: 'phrase-7',
     category: 'Charges & Brokerage',
     prohibited: "This transaction charge was deducted by the system. We can't refund it, go complain to SEBI or web portal.",
-    compliant: "Aapke ledger me charge rate list stamp duty aur transaction statutory fees ke standard tariff plans ke rules ke accordance applied hain. Agar is statement breakdown me issue lag raha hai, toh complaint desk manual audit setup kar sakti hai.",
+    compliant: "The charges in your ledger have been applied in strict accordance with the standard tariff structure, stamp duty, and statutory transaction fees. If you require a detailed breakdown, our complaint desk can arrange a manual audit of your ledger statements.",
     sebiRule: "SEBI Code of Conduct for Stock Brokers & Transparency circulars",
     explanation: "Never invite angry clients to 'complain to SEBI' or dismiss billing questions. Offer a formal compliance manual ledger audit if a calculation dispute exists."
   },
@@ -75,7 +75,7 @@ const PHRASES_DATA = [
     id: 'phrase-8',
     category: 'Charges & Brokerage',
     prohibited: "Our system has hidden annual charges that we deduct dynamically.",
-    compliant: "Hum standard transparent pricing models implement karte hain. Aap complete annual criteria sheet, Demat maintenance rules and tariff details transparency card sheet standard terms check kar sakte hain, isme koi hidden terms nahi hain.",
+    compliant: "We implement a fully transparent pricing model. You can review our complete annual billing criteria, Demat maintenance rules, and our transparent tariff schedule. There are absolutely no hidden terms or dynamic charges.",
     sebiRule: "SEBI Guideline on Transparency and Disclosure of Brokerage Charges",
     explanation: "Ensure the active agent response stresses absolute transparency and direct reference to standard, approved tariff sheets."
   }
@@ -157,21 +157,21 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
       compliancyScore -= 3;
       issuesFound.push('❌ Used unapproved delay language ("wait", "stuck"). SEBI guidelines prohibit telling clients to wait without specifying standard depository turnaround times.');
       suggestedCategory = 'Payouts & Refunds';
-      suggestion = 'Aapka withdrawal request safely registered ho chuka hai. Depository set-up timeline ke mutabik funds 2 working hours me bank ledger account me transfer ho jayenge.';
+      suggestion = 'Your withdrawal request has been successfully registered. In accordance with depository processing timelines, the funds will be transferred to your bank ledger account within 2 working hours.';
     }
 
     if (text.includes('guarantee') || text.includes('100%') || text.includes('profit') || text.includes('return')) {
       compliancyScore -= 4;
       issuesFound.push('🚨 COMPLIANCE BREACH: Guaranteed returns/refunds promise. SEBI Code of Conduct strictly prevents stock brokers from guaranteeing capital returns or refunds for market issues.');
       suggestedCategory = 'Payouts & Refunds';
-      suggestion = 'Brokerage charges guidelines as per regulatory charts strictly follow fixed percentages. Hum absolute return/profit ya guaranteed refund promise nahi karte.';
+      suggestion = 'Brokerage charges strictly follow our published regulatory tariff. In line with compliance guidelines, we do not guarantee specific returns, profits, or automated surcharge waivers.';
     }
 
     if (text.includes('kra') || text.includes('skip') || text.includes('bypass') || text.includes('without documents')) {
       compliancyScore -= 4;
       issuesFound.push('🚨 COMPLIANCE BREACH: Attempting/suggesting to bypass document verification. Account onboarding and KRA digital verification are strictly mandated by the Prevention of Money Laundering Act (PMLA).');
       suggestedCategory = 'KYC & Demat';
-      suggestion = 'Standard financial safety rules and KRA norms ke compliance me account start karne se pehle pan and offline verification mandatory hai. Is audit process me normally 12 working hours lagte hain.';
+      suggestion = 'In compliance with standard financial safety regulations and KRA norms, PAN check and in-person verification are mandatory before activating the account. This audit process normally takes up to 12 working hours.';
     }
 
     if (text.includes('closed') || text.includes('rms') || text.includes('squared-off') || text.includes('margin') || text.includes('collateral')) {
@@ -180,14 +180,14 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
         issuesFound.push('⚠️ Defensive brand language: Denied platform liability or responsibility. Frame liquidation actions purely around exchange margin criteria squared-off by system.');
       }
       suggestedCategory = 'Margin & RMS';
-      suggestion = 'Exchange margin shortfall guidelines ke rule compliance me Risk Management Desk (RMS) ko automatic action ke tehet positions wind-up karni padti hain. Hum position protection ke liye ledger margin check karne ki criteria suggest karte.';
+      suggestion = 'In strict compliance with exchange margin shortfall guidelines, the Risk Management Desk (RMS) automatically closes positions during deficit triggers. We recommend maintaining adequate ledger margin to prevent system square-offs.';
     }
 
     if (text.includes('complain') || text.includes('sebi') || text.includes('portal')) {
       compliancyScore -= 2;
       issuesFound.push('⚠️ Deflection language. Strictly avoid inviting upset clients to check complaint links or go direct to SEBI. Instead, direct them to an internal senior audit ledger check.');
       suggestedCategory = 'Charges & Brokerage';
-      suggestion = 'Aapke ledger me charge rate list stamp duty aur transaction statutory fees ke standard tariff plans ke rules ke accordance applied hain. Agar calculations me confusion hai, toh compliance team active manual audit start karegi.';
+      suggestion = 'The charges on your ledger statement have been applied in accordance with standard tariff schedules, stamp duty, and statutory transaction fees. If you detect any discrepancies, our compliance desk will initiate a manual audit check.';
     }
 
     if (compliancyScore === 10) {
@@ -834,25 +834,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
             </div>
           )}
 
-          {moduleId === 'soft_skills' && (
-            <div className="space-y-3.5 text-left">
-              <div className="p-2 bg-blue-50 text-blue-800 rounded-sm text-[11px] flex gap-2 border border-blue-100">
-                <Smile className="w-4 h-4 shrink-0 mt-0.5" />
-                <p>Paste statements or lines you previously used or plan to say on live chat, and let the coach evaluate your empathy and tone.</p>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-500 mb-1">Your Proposed Response / Chat Statement</label>
-                <textarea 
-                  id="inp-skills-draft"
-                  rows={5}
-                  placeholder="Type or paste the verbal phrase you want tested (e.g., 'Calm down, there is no need to write in caps...')"
-                  value={inputs.agentResponse}
-                  onChange={(e) => handleInputChange('agentResponse', e.target.value)}
-                  className="w-full text-xs px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white transition resize-none"
-                />
-              </div>
-            </div>
-          )}
+
 
           {moduleId === 'escalation' && (
             <div className="space-y-3.5 text-left">
@@ -1168,81 +1150,7 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
                     {renderOutputBlock("issueExplanation", "3. Phrasing the Technical Problem Summary", output.issueExplanation, false, true)}
                     {renderOutputBlock("resolutionScript", "4. Explaining the Resolution & Seeking Agreement", output.resolutionScript, false, true)}
                     {renderOutputBlock("closingScript", "5. Professional Assurance & Farewell Closing", output.closingScript, false, true)}
-                  </div>
-                )}
-
-                {/* 4. Soft Skills Output Fields */}
-                {moduleId === 'soft_skills' && (
-                  <div className="space-y-4">
-                    {/* Performance Score Cards (3 columns) */}
-                    <div className="grid grid-cols-3 gap-2 bg-slate-50 p-3 rounded-sm border border-slate-200">
-                      <div className="text-center">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider mb-0.5">Confidence Score</span>
-                        <div className="flex items-baseline justify-center gap-0.5">
-                          <span className={`text-xl font-extrabold ${getScoreColor(output.confidenceScore || 8)}`}>{output.confidenceScore || 8}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">/10</span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-1 rounded-full mt-1 overflow-hidden">
-                          <div className={`h-full ${getScoreBg(output.confidenceScore || 8)}`} style={{ width: `${(output.confidenceScore || 8) * 10}%` }}></div>
-                        </div>
-                      </div>
-                      
-                      <div className="text-center border-l border-slate-200 pl-2">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider mb-0.5">Empathy Score</span>
-                        <div className="flex items-baseline justify-center gap-0.5">
-                          <span className={`text-xl font-extrabold ${getScoreColor(output.empathyScore || 7)}`}>{output.empathyScore || 7}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">/10</span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-1 rounded-full mt-1 overflow-hidden">
-                          <div className={`h-full ${getScoreBg(output.empathyScore || 7)}`} style={{ width: `${(output.empathyScore || 7) * 10}%` }}></div>
-                        </div>
-                      </div>
-
-                      <div className="text-center border-l border-slate-200 pl-2">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block tracking-wider mb-0.5">Professionalism</span>
-                        <div className="flex items-baseline justify-center gap-0.5">
-                          <span className={`text-xl font-extrabold ${getScoreColor(output.professionalismScore || 9)}`}>{output.professionalismScore || 9}</span>
-                          <span className="text-[10px] text-slate-400 font-bold">/10</span>
-                        </div>
-                        <div className="w-full bg-slate-200 h-1 rounded-full mt-1 overflow-hidden">
-                          <div className={`h-full ${getScoreBg(output.professionalismScore || 9)}`} style={{ width: `${(output.professionalismScore || 9) * 10}%` }}></div>
-                        </div>
-                      </div>
                     </div>
-
-                    {/* Negative Words Audit Alert */}
-                    {output.avoidNegativeWords && (
-                      <div className="p-3 bg-amber-50 text-amber-900 border border-amber-200 rounded-sm text-xs space-y-1">
-                        <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                          <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-                          <span>Negative Phrase Analysis & Replacement</span>
-                        </div>
-                        <p className="text-[11px] leading-relaxed text-amber-700">{output.avoidNegativeWords}</p>
-                      </div>
-                    )}
-
-                    {/* Highly Crafted Variations Layout */}
-                    <div className="space-y-3.5">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 block -mb-1">Multi-Channel Brokerage Formulations</span>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {renderOutputBlock("professionalVersion", "1. Professional Version (Verified Investor)", output.professionalVersion, true)}
-                        {renderOutputBlock("empatheticVersion", "2. Empathetic Version (Validating feelings)", output.empatheticVersion, true)}
-                        {renderOutputBlock("positiveVersion", "3. Positive Version (Action-Focused)", output.positiveVersion, true)}
-                        {renderOutputBlock("regulatoryFriendlyVersion", "4. Regulatory-Friendly Version", output.regulatoryFriendlyVersion, true)}
-                        {renderOutputBlock("highCsatVersion", "5. High CSAT Version (Rapid Resolution)", output.highCsatVersion, true)}
-                        {renderOutputBlock("complianceSafeVersion", "6. Compliance Safe Version (Zero Liability)", output.complianceSafeVersion, true)}
-                      </div>
-                    </div>
-
-                    {/* General Diagnostic Comments */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                      {renderOutputBlock("whatIsGood", "What worked well", output.whatIsGood)}
-                      {renderOutputBlock("whatNeedsImprovement", "Areas for tone correction", output.whatNeedsImprovement)}
-                    </div>
-                    
-                    {renderOutputBlock("softSkillTip", "Support Interaction Tip", output.softSkillTip)}
-                  </div>
                 )}
 
                 {/* 5. Escalation Handling Output Fields */}
