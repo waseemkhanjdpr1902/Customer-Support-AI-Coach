@@ -20,11 +20,11 @@ export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
   const FEATURES = [
     {
       id: 'email_coach',
-      title: 'AI Email Draft Writer',
-      description: 'Draft polite, SEBI-compliant custom support replies, letters, or notifications from raw client prompts.',
+      title: 'Email Coach',
+      description: 'Draft, improve, rewrite, reply, or correct grammar for clients in seconds using our multi-tone variation generator.',
       icon: Mail,
       iconBg: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-      actionLabel: 'Open Draft Writer'
+      actionLabel: 'Open Email Coach'
     },
     {
       id: 'soft_skills',
@@ -57,14 +57,6 @@ export default function HomeView({ onSelectFeature, stats }: HomeViewProps) {
       icon: Phone,
       iconBg: 'bg-rose-500/10 text-rose-400 border border-rose-500/20',
       actionLabel: 'Open Call Scripts'
-    },
-    {
-      id: 'complaint_handling',
-      title: 'Complaint Reply Generator',
-      description: 'Convert hostile trade disputes, double brokerage charges, or dividend payout claims into polite customer letters with apologies.',
-      icon: FileText,
-      iconBg: 'bg-sky-500/10 text-sky-450 border border-sky-500/20',
-      actionLabel: 'Open Complaint Handler'
     },
     {
       id: 'universal_coach',

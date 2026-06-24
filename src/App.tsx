@@ -10,6 +10,7 @@ import DashboardView from './components/DashboardView';
 import CoachModule from './components/CoachModule';
 import HistoryList from './components/HistoryList';
 import HomeView from './components/HomeView';
+import EmailCoach from './components/EmailCoach';
 
 const brandLogo = "/src/assets/images/coach_ai_logo_1781955449391.jpg";
 
@@ -75,12 +76,11 @@ export default function App() {
   // Sidebar navigation metadata
   const NAV_ITEMS = [
     { id: 'home', label: 'Home', icon: Home, countAttr: null },
-    { id: 'email_coach', label: 'AI Email Draft Writer', icon: Mail, countAttr: null },
+    { id: 'email_coach', label: 'Email Coach', icon: Mail, countAttr: null },
     { id: 'soft_skills', label: 'Brokerage Phrase Library', icon: BookOpenCheck, countAttr: null },
     { id: 'escalation', label: 'Escalation Assistant', icon: ShieldAlert, countAttr: null },
     { id: 'email_improvement', label: 'Communication Coach', icon: Sparkles, countAttr: null },
     { id: 'call_script', label: 'Call Script Generator', icon: Phone, countAttr: null },
-    { id: 'complaint_handling', label: 'Complaint Reply Generator', icon: FileText, countAttr: null },
     { id: 'universal_coach', label: 'Soft Skills Coach', icon: Smile, countAttr: null },
     { id: 'history', label: 'Saved Logs', icon: Award, countAttr: 'totalGenerations' }
   ];
@@ -124,7 +124,26 @@ export default function App() {
           />
         );
 
-      default: // Active module tabs (email_coach, email_improvement, complaint_handling, call_script, soft_skills, escalation, email_writer)
+      case 'email_coach':
+        return (
+          <div className="space-y-4">
+            <button
+              onClick={() => setActiveTab('home')}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition cursor-pointer font-sans"
+            >
+              ← Back to AI Workbench
+            </button>
+            <EmailCoach 
+              currentUser={currentUser} 
+              onSaveSuccess={() => {
+                loadHistory(currentUser);
+                loadStats();
+              }}
+            />
+          </div>
+        );
+
+      default: // Active module tabs (email_improvement, call_script, soft_skills, escalation, email_writer)
         return (
           <div className="space-y-4">
             <button
@@ -154,16 +173,16 @@ export default function App() {
       {/* LEFT SIDEBAR - Desktop layout */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-slate-900 border-r border-slate-800 text-slate-100 z-30 select-none shadow-lg">
         {/* Logo & Brand Identity */}
-        <div className="p-4.5 border-b border-slate-800 flex items-center gap-3 cursor-pointer hover:opacity-95 transition" onClick={() => setActiveTab('home')}>
+        <div className="p-4 border-b border-slate-800 flex flex-col gap-2.5 cursor-pointer hover:opacity-95 transition text-left" onClick={() => setActiveTab('home')}>
           <img 
             src={brandLogo} 
-            alt="COACH.AI Logo" 
-            className="h-10 w-auto object-contain rounded-sm border border-slate-800 shadow shadow-blue-500/10 shrink-0"
+            alt="Anand Rathi Logo" 
+            className="w-full h-auto max-h-12 object-contain rounded-sm border border-slate-800 shadow shadow-blue-500/5"
             referrerPolicy="no-referrer"
           />
-          <div className="text-left overflow-hidden">
-            <h1 className="text-xs font-black text-white tracking-widest leading-none">COACH.AI</h1>
-            <span className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-widest block mt-1">Broking Coach Desk</span>
+          <div className="px-1">
+            <h1 className="text-xs font-black text-white tracking-wider leading-none">CS AI Coach</h1>
+            <span className="text-[8px] text-emerald-400 font-extrabold uppercase tracking-widest block mt-1">Broking Support Assistant</span>
           </div>
         </div>
 
@@ -218,11 +237,11 @@ export default function App() {
         <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setActiveTab('home')}>
           <img 
             src={brandLogo} 
-            alt="COACH.AI Logo" 
+            alt="Anand Rathi Logo" 
             className="h-7 w-auto object-contain rounded-xs"
             referrerPolicy="no-referrer"
           />
-          <span className="text-[11px] font-black tracking-widest text-white">COACH.AI</span>
+          <span className="text-xs font-black tracking-widest text-white">CS AI COACH</span>
         </div>
         
         <button
@@ -306,10 +325,10 @@ export default function App() {
         </main>
 
         {/* Clean elegant footer */}
-        <footer className="bg-white border-t border-slate-200 py-3.5 text-center text-[10px] text-slate-400 uppercase font-mono tracking-wider">
+        <footer className="bg-white border-t border-slate-200 py-3.5 text-center text-[10px] text-slate-450 uppercase font-mono tracking-wider">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-            <div>Anand Rathi Investment Services • Team Coaching Suite v1.2</div>
-            <div>Licensed for Internal Agent Training • No Public Data Exposed</div>
+            <div>Internal Use Only – Anand Rathi Customer Support Excellence Platform</div>
+            <div>Authorized Access Only • No Public Data Exposed</div>
           </div>
         </footer>
       </div>

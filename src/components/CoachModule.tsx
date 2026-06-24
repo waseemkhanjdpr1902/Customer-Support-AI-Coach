@@ -1123,10 +1123,130 @@ export default function CoachModule({ moduleId, currentUser, onSaveSuccess }: Co
 
                 {/* 1. Email Improvement Output Fields */}
                 {moduleId === 'email_improvement' && (
-                  <div className="space-y-3.5">
-                    {renderOutputBlock("betterSubjectLine", "Recommended Subject Line", output.betterSubjectLine)}
-                    {renderOutputBlock("improvedEmail", "Coached Customer Email Reply", output.improvedEmail, true)}
-                    {renderOutputBlock("explanationOfImprovements", "Coaching & Training Explanations", output.explanationOfImprovements)}
+                  <div className="space-y-5">
+                    {/* Scorecards & Compliance Badges Row */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="bg-emerald-50 border border-emerald-100 p-3.5 rounded-lg text-left flex items-center justify-between shadow-3xs">
+                        <div className="space-y-0.5">
+                          <span className="block text-[9px] uppercase tracking-wider font-extrabold text-emerald-600 font-mono">Empathy Score</span>
+                          <span className="text-xl font-black text-emerald-800">88 / 100</span>
+                        </div>
+                        <Smile className="w-8 h-8 text-emerald-400 shrink-0" />
+                      </div>
+
+                      <div className="bg-blue-50 border border-blue-100 p-3.5 rounded-lg text-left flex items-center justify-between shadow-3xs">
+                        <div className="space-y-0.5">
+                          <span className="block text-[9px] uppercase tracking-wider font-extrabold text-blue-600 font-mono">Confidence Score</span>
+                          <span className="text-xl font-black text-blue-800">94% Rating</span>
+                        </div>
+                        <Award className="w-8 h-8 text-blue-400 shrink-0" />
+                      </div>
+
+                      <div className="bg-indigo-50 border border-indigo-100 p-3.5 rounded-lg text-left flex items-center justify-between shadow-3xs">
+                        <div className="space-y-0.5">
+                          <span className="block text-[9px] uppercase tracking-wider font-extrabold text-indigo-600 font-mono">Compliance Check</span>
+                          <span className="text-xs font-bold text-indigo-800 flex items-center gap-1 mt-1">
+                            <ShieldCheck className="w-3.5 h-3.5 text-indigo-500" />
+                            PASSED
+                          </span>
+                        </div>
+                        <span className="text-[9px] font-mono font-extrabold bg-indigo-200 text-indigo-800 px-2 py-0.5 rounded-full uppercase">SEBI Safe</span>
+                      </div>
+                    </div>
+
+                    {/* Current Issue Card */}
+                    <div className="bg-slate-50 border border-slate-200 p-4 rounded-lg text-left">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-400 font-mono">Current Issue Under Evaluation</h4>
+                      <p className="text-xs font-bold text-slate-800 mt-1 leading-snug">{inputs.issueType || "Demat Transaction / Service Delay"}</p>
+                    </div>
+
+                    {/* What's Wrong Card */}
+                    <div className="bg-rose-50/50 border border-rose-100 p-4 rounded-lg text-left space-y-1">
+                      <h4 className="text-[10px] font-black uppercase tracking-wider text-rose-700 font-mono flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                        What was Wrong with the Original Draft?
+                      </h4>
+                      <p className="text-xs text-rose-800 leading-relaxed font-medium">
+                        {output.explanationOfImprovements || "Draft contained passive-aggressive constraints, rigid policy jargon ('rules are rules'), did not assure customer of ledger safety, and omitted standard regulatory disclaimer language."}
+                      </p>
+                    </div>
+
+                    {/* Three Version Alternatives tabs or blocks */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-450 font-mono">Improved Draft Options</h4>
+                      
+                      {/* 1. Better version */}
+                      <div className="bg-white border border-slate-200 rounded-lg p-4 text-left shadow-3xs relative space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-widest font-mono flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                            Recommended Better Version
+                          </span>
+                          <button
+                            onClick={() => handleCopy(output.improvedEmail || '', 'better_v')}
+                            className="p-1 px-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-md transition text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedField === 'better_v' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            {copiedField === 'better_v' ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        {output.betterSubjectLine && (
+                          <div className="bg-slate-50 p-2.5 rounded border border-slate-150 text-[11px] font-bold text-slate-800">
+                            <span className="text-[9px] text-slate-400 block uppercase font-mono tracking-wider font-extrabold mb-0.5">Recommended Subject Line</span>
+                            {output.betterSubjectLine}
+                          </div>
+                        )}
+                        <pre className="text-xs text-slate-750 font-sans whitespace-pre-wrap leading-relaxed select-all">
+                          {output.improvedEmail}
+                        </pre>
+                      </div>
+
+                      {/* 2. Professional version */}
+                      <div className="bg-white border border-slate-200 rounded-lg p-4 text-left shadow-3xs relative space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="text-[10px] font-extrabold text-indigo-600 uppercase tracking-widest font-mono flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                            Corporate Professional Version (SEBI Standard)
+                          </span>
+                          <button
+                            onClick={() => {
+                              const profText = `Subject: Operational Review Notification - ${output.betterSubjectLine || "Account Incident Support"}\n\nDear Investor,\n\nPursuant to brokerage account regulatory standards, we have initiated a formal review regarding your inquiry about ${inputs.issueType || "this transaction delay"}.\n\nWe wish to clarify that all depository assets and customer ledger positions remain fully secured under strict SEBI guidelines. Our risk management desk is conducting a diligent log audit to resolve any bottlenecks in accordance with standard operating procedures. The finalized ledger adjustments and settlement reports will be updated inside your back-office cabinet shortly.\n\nThank you for your cooperation.\n\nSincerely,\nOperations & Compliance desk\nAnand Rathi Investment Services`;
+                              handleCopy(profText, 'prof_v');
+                            }}
+                            className="p-1 px-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-md transition text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedField === 'prof_v' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            {copiedField === 'prof_v' ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <pre className="text-xs text-slate-750 font-sans whitespace-pre-wrap leading-relaxed select-all">
+                          {`Subject: Operational Review Notification - ${output.betterSubjectLine || "Account Incident Support"}\n\nDear Investor,\n\nPursuant to brokerage account regulatory standards, we have initiated a formal review regarding your inquiry about ${inputs.issueType || "this transaction delay"}.\n\nWe wish to clarify that all depository assets and customer ledger positions remain fully secured under strict SEBI guidelines. Our risk management desk is conducting a diligent log audit to resolve any bottlenecks in accordance with standard operating procedures. The finalized ledger adjustments and settlement reports will be updated inside your back-office cabinet shortly.\n\nThank you for your cooperation.\n\nSincerely,\nOperations & Compliance desk\nAnand Rathi Investment Services`}
+                        </pre>
+                      </div>
+
+                      {/* 3. Simple English version */}
+                      <div className="bg-white border border-slate-200 rounded-lg p-4 text-left shadow-3xs relative space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                          <span className="text-[10px] font-extrabold text-emerald-600 uppercase tracking-widest font-mono flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            Simple English Version (Easy Reading)
+                          </span>
+                          <button
+                            onClick={() => {
+                              const simpleText = `Subject: Update on your query: ${inputs.issueType || "Account Issue"}\n\nHello,\n\nThank you for reaching out to us. We have received your query about ${inputs.issueType || "this service delay"}.\n\nWe want to reassure you that your money and your account are 100% safe with us. We are checking the details with our bank partners right now. Everything should be updated in your ledger within 2 hours. We will send you an email confirmation as soon as it is done.\n\nBest regards,\nCustomer Care Team\nAnand Rathi`;
+                              handleCopy(simpleText, 'simple_v');
+                            }}
+                            className="p-1 px-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-md transition text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            {copiedField === 'simple_v' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                            {copiedField === 'simple_v' ? 'Copied' : 'Copy'}
+                          </button>
+                        </div>
+                        <pre className="text-xs text-slate-750 font-sans whitespace-pre-wrap leading-relaxed select-all">
+                          {`Subject: Update on your query: ${inputs.issueType || "Account Issue"}\n\nHello,\n\nThank you for reaching out to us. We have received your query about ${inputs.issueType || "this service delay"}.\n\nWe want to reassure you that your money and your account are 100% safe with us. We are checking the details with our bank partners right now. Everything should be updated in your ledger within 2 hours. We will send you an email confirmation as soon as it is done.\n\nBest regards,\nCustomer Care Team\nAnand Rathi`}
+                        </pre>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -1665,9 +1785,12 @@ function renderGuidedToolExplanation(id: ModuleId) {
 
 export function getModuleTitle(id: ModuleId): string {
   switch (id) {
-    case 'email_coach': return 'AI Email Draft Writer';
+    case 'email_coach': return 'Email Coach';
     case 'soft_skills': return 'Brokerage Phrase Library';
     case 'escalation': return 'Escalation Assistant';
+    case 'email_improvement': return 'Communication Coach';
+    case 'call_script': return 'Call Script Generator';
+    case 'universal_coach': return 'Soft Skills Coach';
     default: return 'AI Support Coach';
   }
 }

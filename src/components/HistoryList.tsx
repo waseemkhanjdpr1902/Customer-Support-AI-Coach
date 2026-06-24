@@ -197,12 +197,12 @@ export default function HistoryList({ history, currentUser, onRefresh }: History
             className="text-[11px] px-2 py-2 bg-slate-50 border border-slate-200 rounded-sm focus:outline-none focus:ring-1 focus:ring-blue-500 hover:bg-slate-100 cursor-pointer text-slate-600 font-semibold"
           >
             <option value="all">All Modules</option>
-            <option value="email_improvement">Email Improvement</option>
-            <option value="complaint_handling">Complaint Handling</option>
+            <option value="email_coach">Email Coach</option>
+            <option value="soft_skills">Brokerage Phrase Library</option>
+            <option value="escalation">Escalation Assistant</option>
+            <option value="email_improvement">Communication Coach</option>
             <option value="call_script">Call Scripts</option>
-            <option value="soft_skills">Soft Skills Coach</option>
-            <option value="escalation">Escalation Note</option>
-            <option value="email_writer">AI Email Writer</option>
+            <option value="universal_coach">Soft Skills Coach</option>
           </select>
 
           {/* Tone filter */}
@@ -398,23 +398,29 @@ export default function HistoryList({ history, currentUser, onRefresh }: History
 // Map helper to fetch module icon
 function getModuleIcon(id: ModuleId) {
   switch (id) {
+    case 'email_coach': return Mail;
     case 'email_improvement': return Mail;
     case 'complaint_handling': return Smile;
     case 'call_script': return Phone;
     case 'soft_skills': return Award;
     case 'escalation': return ShieldAlert;
     case 'email_writer': return FileText;
+    case 'universal_coach': return Smile;
+    default: return FileText;
   }
 }
 
 function getModuleColorBg(id: ModuleId): string {
   switch (id) {
+    case 'email_coach': return 'bg-blue-600';
     case 'email_improvement': return 'bg-blue-600';
     case 'complaint_handling': return 'bg-rose-600';
     case 'call_script': return 'bg-emerald-600';
     case 'soft_skills': return 'bg-indigo-600';
     case 'escalation': return 'bg-amber-600';
     case 'email_writer': return 'bg-sky-600';
+    case 'universal_coach': return 'bg-emerald-600';
+    default: return 'bg-slate-600';
   }
 }
 
