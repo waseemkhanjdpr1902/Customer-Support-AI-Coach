@@ -1,24 +1,19 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
-// Since we are package type=module, derive standard __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
 // JSON Local Database filepath
-const DB_PATH = path.join(__dirname, "db.json");
+const DB_PATH = path.join(process.cwd(), "db.json");
 
 // Helper to secure directory and return DB structure
 function loadDb() {
@@ -190,7 +185,7 @@ async function generateAIResponse(prompt: string, systemPrompt: string, requireJ
       });
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         contents: prompt,
         config: {
           systemInstruction: systemPrompt,
@@ -304,10 +299,21 @@ function parseCleanJson(text: string): any {
 
 // Check API status
 app.get("/api/health", (req, res) => {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  const groqKey = process.env.GROQ_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  const activeProviders: string[] = [];
+  if (geminiKey && geminiKey !== "MY_GEMINI_API_KEY" && geminiKey.trim() !== "") activeProviders.push("Gemini");
+  if (groqKey && groqKey !== "MY_GROQ_API_KEY" && groqKey.trim() !== "") activeProviders.push("Groq");
+  if (openaiKey && openaiKey !== "MY_OPENAI_API_KEY" && openaiKey.trim() !== "") activeProviders.push("OpenAI");
+
   res.json({
     status: "ok",
+    mode: activeProviders.length > 0 ? "live_ai" : "offline_fallback",
+    activeProviders,
     timestamp: new Date().toISOString(),
-    geminiConfigured: !!process.env.GEMINI_API_KEY
+    geminiConfigured: activeProviders.includes("Gemini")
   });
 });
 
@@ -391,6 +397,23 @@ app.post("/api/history", (req, res) => {
   saveDb(db);
 
   res.status(201).json(newItem);
+});
+
+app.delete("/api/history/:id", (req, res) => {
+  const { id } = req.params;
+  const db = loadDb();
+  db.ai_history = db.ai_history.filter((item: any) => item.id !== id);
+  db.manager_reviews = db.manager_reviews.filter((r: any) => r.historyId !== id);
+  saveDb(db);
+  res.json({ success: true, message: "History item deleted" });
+});
+
+app.delete("/api/history", (req, res) => {
+  const db = loadDb();
+  db.ai_history = [];
+  db.manager_reviews = [];
+  saveDb(db);
+  res.json({ success: true, message: "All history items cleared" });
 });
 
 // Manager Reviews

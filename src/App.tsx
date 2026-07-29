@@ -11,19 +11,18 @@ import CoachModule from './components/CoachModule';
 import HistoryList from './components/HistoryList';
 import HomeView from './components/HomeView';
 import EmailCoach from './components/EmailCoach';
+import brandLogo from './assets/images/coach_ai_logo_1781955449391.jpg';
 
-const brandLogo = "/src/assets/images/coach_ai_logo_1781955449391.jpg";
-
-const GUEST_USER: User = {
-  id: "u-static",
-  name: "Support Coach Guest",
-  email: "guest@supportcoach.ai",
-  role: "manager", // Set to manager by default to allow exploring all modules and reviews without blockades
-  avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"
-};
+export const TEAM_MEMBERS: User[] = [
+  { id: "u-1", name: "Alice Vance", email: "alice@finbroking.corp", role: "agent", avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" },
+  { id: "u-2", name: "Bob Carter", email: "bob@finbroking.corp", role: "agent", avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" },
+  { id: "u-3", name: "Charlie Stone", email: "charlie@finbroking.corp", role: "agent", avatarUrl: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150" },
+  { id: "u-4", name: "Sarah Jenkins", email: "sarah@finbroking.corp", role: "manager", avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150" },
+  { id: "u-5", name: "David Miller", email: "david@finbroking.corp", role: "manager", avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" },
+];
 
 export default function App() {
-  const [currentUser] = useState<User>(GUEST_USER);
+  const [currentUser, setCurrentUser] = useState<User>(TEAM_MEMBERS[3]); // Sarah Jenkins (Manager) default
   const [activeTab, setActiveTab] = useState<string>('home');
   const [history, setHistory] = useState<HistoryItem[]>(STATIC_HISTORY);
   const [learningResources, setLearningResources] = useState<LearningResource[]>(STATIC_LEARNING_RESOURCES);
@@ -291,11 +290,40 @@ export default function App() {
             <span className="text-xs font-bold text-slate-800">{activeNavItem?.label || 'AI Coaching Assistant'}</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {/* Team Member Switcher */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-sm">
+              <img 
+                src={currentUser.avatarUrl} 
+                alt={currentUser.name} 
+                className="w-6 h-6 rounded-full object-cover border border-slate-300"
+                referrerPolicy="no-referrer"
+              />
+              <select
+                value={currentUser.id}
+                onChange={(e) => {
+                  const sel = TEAM_MEMBERS.find(m => m.id === e.target.value);
+                  if (sel) setCurrentUser(sel);
+                }}
+                className="text-xs font-bold text-slate-800 bg-transparent border-none focus:outline-none cursor-pointer pr-1"
+              >
+                {TEAM_MEMBERS.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.role === 'manager' ? 'Supervisor' : 'Agent'})
+                  </option>
+                ))}
+              </select>
+              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded font-mono ${
+                currentUser.role === 'manager' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
+              }`}>
+                {currentUser.role}
+              </span>
+            </div>
+
             {/* Safe indicators */}
             <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-sm">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[9px] uppercase font-bold tracking-widest font-mono text-emerald-700">Audit Desk Sandbox Online</span>
+              <span className="text-[9px] uppercase font-bold tracking-widest font-mono text-emerald-700">Audit Desk Sandbox</span>
             </div>
             
             {/* Saved Logs quick counter button */}
@@ -304,7 +332,7 @@ export default function App() {
               className="px-3.5 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 text-[10px] font-bold rounded-sm uppercase tracking-wider transition cursor-pointer flex items-center gap-1 shadow-xs"
             >
               <BookOpenCheck className="w-3.5 h-3.5 text-indigo-600" />
-              <span>History Archive ({stats.totalGenerations || 0})</span>
+              <span>Logs ({stats.totalGenerations || 0})</span>
             </button>
           </div>
         </header>

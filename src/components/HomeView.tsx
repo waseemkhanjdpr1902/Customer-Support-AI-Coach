@@ -5,8 +5,7 @@ import {
   CheckCircle2, AlertCircle, HelpCircle
 } from 'lucide-react';
 import { ModuleId } from '../types';
-
-const brandLogo = "/src/assets/images/coach_ai_logo_1781955449391.jpg";
+import brandLogo from '../assets/images/coach_ai_logo_1781955449391.jpg';
 
 interface HomeViewProps {
   onSelectFeature: (tabId: string) => void;
